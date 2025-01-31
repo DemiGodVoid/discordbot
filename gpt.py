@@ -1,6 +1,19 @@
 import discord
 from discord.ext import commands
 import requests
+import os
+
+# Function to get or save the bot token
+def get_bot_token():
+    token_file = "bot_token.txt"
+    if os.path.exists(token_file):
+        with open(token_file, "r") as file:
+            return file.read().strip()
+    else:
+        token = input("Enter your bot token: ")
+        with open(token_file, "w") as file:
+            file.write(token)
+        return token
 
 # Set up the bot
 intents = discord.Intents.default()
@@ -29,6 +42,6 @@ async def script(ctx, *, prompt: str):
     script_text = response.text.split("<that>")[1].split("</that>")[0] if "<that>" in response.text else "I couldn't generate a script."
     await ctx.send(f'```{script_text[:1900]}```')  # Discord message limit
 
-# Run the bot (Replace with your token securely)
-TOKEN = "MTIwNjMxMDU1NTQ0NzcyMjA2NA.GEDqH-.Dfx7ouzMDorGqHNHuxHOX7flynG385VFNJjVzY"
+# Run the bot with stored or user-provided token
+TOKEN = get_bot_token()
 bot.run(TOKEN)
