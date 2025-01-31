@@ -73,7 +73,7 @@ async def on_message(message):
     # Commands list
     if message.content == '!commands':
         await message.channel.send(
-            'Commands:\n\n!ping\n\n!gif text @user\n\n!meme\n\n!meme number (auto-send memes every X minutes)\n\n!stopmeme\n\n!bmessage word\n\n!unbmessage word\n\n!bannedwords'
+            'Commands:\n\n!ping\n\n!gif text @user\n\n!meme\n\n!meme number (auto-send memes every X minutes)\n\n!stopmeme\n\n!bmessage word\n\n!unbmessage word\n\n!bannedwords\n\ndeath (talk to death bot)\n\ninsult (Have death bot insult you)'
         )
 
     # Meme command
