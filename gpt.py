@@ -1,6 +1,7 @@
 import discord
 from discord.ext import commands
-import requests
+import torch
+from transformers import GPT2LMHeadModel, GPT2Tokenizer
 import os
 
 # Function to get or save the bot token
@@ -20,26 +21,33 @@ intents = discord.Intents.default()
 intents.messages = True
 bot = commands.Bot(command_prefix="!", intents=intents)
 
+# Load GPT-2 model and tokenizer from HuggingFace Transformers
+model_name = "gpt2"  # You can switch this to a larger model like "gpt2-medium" or "gpt2-large" if needed
+model = GPT2LMHeadModel.from_pretrained(model_name)
+tokenizer = GPT2Tokenizer.from_pretrained(model_name)
+
+# Function to generate responses using the GPT-2 model
+def generate_response(input_text):
+    # Encode input and generate output
+    inputs = tokenizer.encode(input_text, return_tensors="pt")
+    outputs = model.generate(inputs, max_length=150, num_return_sequences=1, no_repeat_ngram_size=2, top_p=0.92, top_k=50)
+    response = tokenizer.decode(outputs[0], skip_special_tokens=True)
+    return response
+
 @bot.event
 async def on_ready():
     print(f'Logged in as {bot.user}')
 
 @bot.command()
 async def chat(ctx, *, message: str):
-    """Talk to a free online chatbot!"""
-    url = "https://www.pandorabots.com/pandora/talk-xml"
-    params = {"botid": "b0dafd24ee35a477", "input": message}
-    response = requests.get(url, params=params)
-    reply = response.text.split("<that>")[1].split("</that>")[0] if "<that>" in response.text else "I couldn't generate a response."
-    await ctx.send(reply)
+    """Talk to a local GPT-2 chatbot!"""
+    response = generate_response(message)
+    await ctx.send(response)
 
 @bot.command()
 async def script(ctx, *, prompt: str):
-    """Generate a script using a free online chatbot!"""
-    url = "https://www.pandorabots.com/pandora/talk-xml"
-    params = {"botid": "b0dafd24ee35a477", "input": f'Write a script about {prompt}'}
-    response = requests.get(url, params=params)
-    script_text = response.text.split("<that>")[1].split("</that>")[0] if "<that>" in response.text else "I couldn't generate a script."
+    """Generate a script using a local GPT-2 model!"""
+    script_text = generate_response(f"Write a script about {prompt}")
     await ctx.send(f'```{script_text[:1900]}```')  # Discord message limit
 
 # Run the bot with stored or user-provided token
