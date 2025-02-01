@@ -15,6 +15,8 @@ death+insult message (Example: Death, could you insult me?) is how you can make 
 -
 Sad message (Example: Gosh, i feel sad) Will prompt the bot to give a meaningful reply back to you to help cheer you up.
 -
+!commands Is how you can view the bots command list(over 5 commands so far.)
+-
 
 
 More will be coming to the bot!
