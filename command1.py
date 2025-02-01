@@ -24,7 +24,7 @@ meme_interval = None
 
 # List to store banned words
 banned_words = []
-triggers = {}  # Dictionary to store trigger-response pairs
+triggers = {}  # Dictionary to store trigger-response pairs (case-insensitive)
 
 
 @client.event
@@ -61,15 +61,18 @@ async def on_message(message):
     if message.author == client.user:
         return
 
+    # Convert message to lowercase for case-insensitive checks
+    msg_lower = message.content.lower()
+
     # Check if the message contains a banned word
     for banned_word in banned_words:
-        if banned_word in message.content.lower():
+        if banned_word in msg_lower:
             await message.delete()
             return
 
-    # Respond to a trigger message if it exists
-    if message.content in triggers:
-        await message.channel.send(triggers[message.content])
+    # Respond to a trigger message if it exists (case-insensitive)
+    if msg_lower in triggers:
+        await message.channel.send(triggers[msg_lower])
 
     # Ping command
     if message.content == '!ping':
@@ -80,7 +83,7 @@ async def on_message(message):
         await message.channel.send(
             'Commands:\n\n!ping\n\n!gif text @user\n\n!meme\n\n!meme number (auto-send memes every X minutes)\n\n'
             '!stopmeme\n\n!bmessage word\n\n!unbmessage word\n\n!bannedwords\n\n'
-            '!trigger message=message (set a trigger response)\n\n Death (just say death to talk to the bot!)\n\nDeath+Insult (type a message containg the words death and insult and the bot will roast you!)\n\nSad (just say sad, unhappy or so forth and death will cheer you up!)'
+            '!trigger message=message (set a trigger response)\n\n Death (just say death to talk to the bot!)\n\nDeath+Insult (type a message containing the words death and insult and the bot will roast you!)\n\nSad (just say sad, unhappy or so forth and death will cheer you up!)'
         )
 
     # Meme command
@@ -155,11 +158,11 @@ async def on_message(message):
         else:
             await message.channel.send(f"Banned words: {', '.join(banned_words)}")
 
-    # Trigger message command
+    # Trigger message command (case-insensitive)
     if message.content.startswith("!trigger "):
         parts = message.content[len("!trigger "):].split("=")
         if len(parts) == 2:
-            trigger, response = parts[0].strip(), parts[1].strip()
+            trigger, response = parts[0].strip().lower(), parts[1].strip()
             triggers[trigger] = response
             await message.channel.send(f"Trigger set: '{trigger}' → '{response}'")
         else:
