@@ -1,6 +1,8 @@
 import discord
 import random
 import asyncio
+import json
+import os
 
 intents = discord.Intents.default()
 intents.message_content = True
@@ -8,6 +10,24 @@ intents.members = True  # Enable member intents to fetch server members
 client = discord.Client(intents=intents)
 
 TOKEN = input("Please enter your Discord bot token: ")
+
+# File to store triggers persistently
+TRIGGERS_FILE = "triggers.json"
+
+# Function to load stored triggers
+def load_triggers():
+    if os.path.exists(TRIGGERS_FILE):
+        with open(TRIGGERS_FILE, "r") as f:
+            return json.load(f)
+    return {}
+
+# Function to save triggers to file
+def save_triggers():
+    with open(TRIGGERS_FILE, "w") as f:
+        json.dump(triggers, f, indent=4)
+
+# Dictionary to store triggers per server
+triggers = load_triggers()
 
 # List of funny meme templates
 meme_templates = [
@@ -33,13 +53,10 @@ meme_interval = None
 
 # List to store banned words
 banned_words = []
-triggers = {}  # Dictionary to store trigger-response pairs (case-insensitive)
-
 
 @client.event
 async def on_ready():
     print(f'We have logged in as {client.user}')
-
 
 async def send_meme_periodically(channel, interval):
     """Sends a meme periodically to the specified channel."""
@@ -62,13 +79,19 @@ async def send_meme_periodically(channel, interval):
         # Wait for the specified interval before sending the next meme
         await asyncio.sleep(interval * 60)
 
-
 @client.event
 async def on_message(message):
     global meme_task, meme_interval, banned_words, triggers
 
     if message.author == client.user:
         return
+
+    # Get server (guild) ID to store triggers separately for each server
+    guild_id = str(message.guild.id)  
+
+    # Ensure the guild has a triggers entry
+    if guild_id not in triggers:
+        triggers[guild_id] = {}
 
     # Convert message to lowercase for case-insensitive checks
     msg_lower = message.content.lower()
@@ -80,8 +103,8 @@ async def on_message(message):
             return
 
     # Respond to a trigger message if it exists (case-insensitive)
-    if msg_lower in triggers:
-        await message.channel.send(triggers[msg_lower])
+    if msg_lower in triggers[guild_id]:
+        await message.channel.send(triggers[guild_id][msg_lower])
 
     # Ping command
     if message.content == '!ping':
@@ -137,45 +160,15 @@ async def on_message(message):
         else:
             await message.channel.send("Auto-memes are not currently running.")
 
-    # Bmessage command to add a banned word
-    if message.content.startswith('!bmessage'):
-        await message.delete()
-        word_to_ban = message.content[len('!bmessage '):].strip().lower()
-        if not word_to_ban:
-            await message.channel.send("Please specify a word to ban. Usage: !bmessage <word>")
-        elif word_to_ban in banned_words:
-            await message.channel.send(f"`{word_to_ban}` is already banned!")
-        else:
-            banned_words.append(word_to_ban)
-            await message.channel.send(f"`{word_to_ban}` has been added to the banned words list!")
-
-    # Unbmessage command to remove a banned word
-    if message.content.startswith('!unbmessage'):
-        word_to_unban = message.content[len('!unbmessage '):].strip().lower()
-        if not word_to_unban:
-            await message.channel.send("Please specify a word to unban. Usage: !unbmessage <word>")
-        elif word_to_unban not in banned_words:
-            await message.channel.send(f"`{word_to_unban}` is not in the banned words list!")
-        else:
-            banned_words.remove(word_to_unban)
-            await message.channel.send(f"`{word_to_unban}` has been removed from the banned words list!")
-
-    # List all banned words
-    if message.content == "!bannedwords":
-        if not banned_words:
-            await message.channel.send("No words are currently banned.")
-        else:
-            await message.channel.send(f"Banned words: {', '.join(banned_words)}")
-
-    # Trigger message command (case-insensitive)
+    # Trigger message command (store persistently)
     if message.content.startswith("!trigger "):
         parts = message.content[len("!trigger "):].split("=")
         if len(parts) == 2:
             trigger, response = parts[0].strip().lower(), parts[1].strip()
-            triggers[trigger] = response
+            triggers[guild_id][trigger] = response
+            save_triggers()  # Save immediately to keep data persistent
             await message.channel.send(f"Trigger set: '{trigger}' → '{response}'")
         else:
             await message.channel.send("Invalid format. Use: `!trigger message=message`")
-
 
 client.run(TOKEN)
