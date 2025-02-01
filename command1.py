@@ -15,7 +15,7 @@ meme_templates = [
     "{user1} Was caught sticking a dragon dildo up {user2}'s ass",
     "{user1} Is currently outside {user2}'s house with an AK-47, CALL THE COPS!",
     "{user1} Why are you currently watching porn inside your parents' bedroom closet with {user2}?",
-    "{user1} Please stop playing footies with {user2}, that's your sister by blood.",
+    "{user1} Please stop playing footsies with {user2}, that's your sister by blood.",
 ]
 
 # Background task variables
@@ -24,6 +24,7 @@ meme_interval = None
 
 # List to store banned words
 banned_words = []
+triggers = {}  # Dictionary to store trigger-response pairs
 
 
 @client.event
@@ -55,7 +56,7 @@ async def send_meme_periodically(channel, interval):
 
 @client.event
 async def on_message(message):
-    global meme_task, meme_interval, banned_words
+    global meme_task, meme_interval, banned_words, triggers
 
     if message.author == client.user:
         return
@@ -66,6 +67,10 @@ async def on_message(message):
             await message.delete()
             return
 
+    # Respond to a trigger message if it exists
+    if message.content in triggers:
+        await message.channel.send(triggers[message.content])
+
     # Ping command
     if message.content == '!ping':
         await message.channel.send('PONG')
@@ -73,7 +78,9 @@ async def on_message(message):
     # Commands list
     if message.content == '!commands':
         await message.channel.send(
-            'Commands:\n\n!ping\n\n!gif text @user\n\n!meme\n\n!meme number (auto-send memes every X minutes)\n\n!stopmeme\n\n!bmessage word\n\n!unbmessage word\n\n!bannedwords\n\ndeath (talk to death bot)\n\ninsult (Have death bot insult you)'
+            'Commands:\n\n!ping\n\n!gif text @user\n\n!meme\n\n!meme number (auto-send memes every X minutes)\n\n'
+            '!stopmeme\n\n!bmessage word\n\n!unbmessage word\n\n!bannedwords\n\n'
+            '!trigger message=message (set a trigger response)\n\n Death (just say death to talk to the bot!)\n\nDeath+Insult (type a message containg the words death and insult and the bot will roast you!)\n\nSad (just say sad, unhappy or so forth and death will cheer you up!)'
         )
 
     # Meme command
@@ -147,6 +154,16 @@ async def on_message(message):
             await message.channel.send("No words are currently banned.")
         else:
             await message.channel.send(f"Banned words: {', '.join(banned_words)}")
+
+    # Trigger message command
+    if message.content.startswith("!trigger "):
+        parts = message.content[len("!trigger "):].split("=")
+        if len(parts) == 2:
+            trigger, response = parts[0].strip(), parts[1].strip()
+            triggers[trigger] = response
+            await message.channel.send(f"Trigger set: '{trigger}' → '{response}'")
+        else:
+            await message.channel.send("Invalid format. Use: `!trigger message=message`")
 
 
 client.run(TOKEN)
