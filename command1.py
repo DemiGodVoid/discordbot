@@ -13,6 +13,8 @@ TOKEN = input("Please enter your Discord bot token: ")
 
 # File paths for storing persistent data
 TRIGGERS_FILE = "triggers.json"
+RULES_FILE = "rules.json"
+MEMES_FILE = "memes.txt"
 
 # Function to load JSON data
 def load_data(file_path):
@@ -26,26 +28,17 @@ def save_data(file_path, data):
     with open(file_path, "w") as f:
         json.dump(data, f, indent=4)
 
+# Function to load meme templates from memes.txt
+def load_memes():
+    if os.path.exists(MEMES_FILE):
+        with open(MEMES_FILE, "r") as f:
+            return f.readlines()
+    return []
+
 # Load persistent data
 triggers = load_data(TRIGGERS_FILE)  # Triggers per server
-
-# List of funny meme templates
-meme_templates = [
-    "{user1} got caught stealing {user2}'s lunch!",
-    "{user1} Was caught sticking a dragon dildo up {user2}'s ass",
-    "{user1} Is currently outside {user2}'s house with an AK-47, CALL THE COPS!",
-    "{user1} Why are you currently watching porn inside your parents' bedroom closet with {user2}?",
-    "{user1} Please stop playing footsies with {user2}, that's your sister by blood.",
-    "{user1} Wants to know if you're okay with sneaking out tonight and digging up the neighbors dead dog so we can place it on their porch {user2}, should we do this?",
-    "Yo bro, i think everyone deserves to know {user1} is attempting to eat dog shit out!!",
-    "{user1} did you know that {user2} might like you? I saw them looking through your window rubbing a sharp object against the wall",
-    "{user1} Sometimes it's best to let things go, ain't that right {user2}, they let go of their grandpa as he was begging them to pull up. lmao",
-    "{user1} dick is 3 inches , dont tell anyone though",
-    "{user1} it's time to call your doctor , see if you got HIV or not.",
-    "{user1} everytime i look at a goat, i think of you",
-    "{user1} When i look into your eyes, i just wanna gut you open from the inside out with {user2}",
-    "{user1} ain't it so weird that you and {user2} get beat by your parents?",
-]
+rules = load_data(RULES_FILE)  # Rules per server
+meme_templates = load_memes()  # Meme templates from memes.txt
 
 # Background task variables
 meme_task = None
@@ -54,6 +47,15 @@ meme_interval = None
 @client.event
 async def on_ready():
     print(f'We have logged in as {client.user}')
+
+@client.event
+async def on_member_join(member):
+    """Sends rules to new members when they join."""
+    guild_id = str(member.guild.id)
+    if guild_id in rules:
+        await member.send(f"Welcome to the server! Here are the server rules:\n\n{rules[guild_id]}")
+    else:
+        await member.send("Welcome to the server! No rules have been set yet.")
 
 async def send_meme_periodically(channel, interval):
     """Sends a meme periodically to the specified channel."""
@@ -70,7 +72,7 @@ async def send_meme_periodically(channel, interval):
         user2_mention = user2.mention
 
         # Pick a random meme template
-        meme = random.choice(meme_templates).format(user1=user1_mention, user2=user2_mention)
+        meme = random.choice(meme_templates).strip().format(user1=user1_mention, user2=user2_mention)
         await channel.send(meme)
 
         # Wait for the specified interval before sending the next meme
@@ -78,17 +80,19 @@ async def send_meme_periodically(channel, interval):
 
 @client.event
 async def on_message(message):
-    global meme_task, meme_interval, triggers
+    global meme_task, meme_interval, triggers, rules
 
     if message.author == client.user:
         return
 
     # Get server (guild) ID to store data per server
-    guild_id = str(message.guild.id)  
+    guild_id = str(message.guild.id)
 
-    # Ensure the guild has an entry in triggers
+    # Ensure the guild has an entry in triggers and rules
     if guild_id not in triggers:
         triggers[guild_id] = {}
+    if guild_id not in rules:
+        rules[guild_id] = {}
 
     # Convert message to lowercase for case-insensitive checks
     msg_lower = message.content.lower()
@@ -105,7 +109,7 @@ async def on_message(message):
     if message.content == '!commands':
         await message.channel.send(
             'Commands:\n\n!ping\n\n!meme\n\n!meme number (auto-send memes every X minutes)\n\n'
-            '!stopmeme\n\n!trigger message=message (set a trigger response)\n\n Death (just say death to talk to the bot!)\n\nDeath+Insult (type a message containing the words death and insult and the bot will roast you!)\n\nSad (just say sad, unhappy or so forth and death will cheer you up!)'
+            '!stopmeme\n\n!trigger message=message (set a trigger response)\n\n!set_rules message (set server rules)\n'
         )
 
     # Meme command
@@ -122,7 +126,7 @@ async def on_message(message):
             user2_mention = user2.mention
 
             # Pick a random meme template
-            meme = random.choice(meme_templates).format(user1=user1_mention, user2=user2_mention)
+            meme = random.choice(meme_templates).strip().format(user1=user1_mention, user2=user2_mention)
             await message.channel.send(meme)
 
         elif message.content.startswith('!meme '):  # Auto-meme command
@@ -160,5 +164,15 @@ async def on_message(message):
             await message.channel.send(f"Trigger set: '{trigger}' → '{response}'")
         else:
             await message.channel.send("Invalid format. Use: `!trigger message=message`")
+
+    # Set rules command (store persistently)
+    if message.content.startswith("!set_rules "):
+        rules_text = message.content[len("!set_rules "):].strip()
+        if rules_text:
+            rules[guild_id] = rules_text
+            save_data(RULES_FILE, rules)  # Save persistently
+            await message.channel.send(f"Server rules set:\n{rules_text}")
+        else:
+            await message.channel.send("Please provide the rules after the command. Usage: `!set_rules <rules>`")
 
 client.run(TOKEN)
