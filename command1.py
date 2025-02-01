@@ -16,6 +16,15 @@ meme_templates = [
     "{user1} Is currently outside {user2}'s house with an AK-47, CALL THE COPS!",
     "{user1} Why are you currently watching porn inside your parents' bedroom closet with {user2}?",
     "{user1} Please stop playing footsies with {user2}, that's your sister by blood.",
+    "{user1} Wants to know if you're okay with sneaking out tonight and digging up the neighbors dead dog so we can place it on their porch {user2}, should we do this?",
+    "Yo bro, i think everyone deserves to know {user1} is attempting to eat dog shit out!!",
+    "{user1} did you know that {user2} might like you? I saw them looking through your window rubbing a sharp object against the wall",
+    "{user1} Sometimes it's best to let things go, ain't that right {user2}, they let go of their grandpa as he was begging them to pull up. lmao",
+    "{user1} dick is 3 inches , dont tell anyone though",
+    "{user1} it's time to call your doctor , see if you got HIV or not.",
+    "{user1} everytime i look at a goat, i think of you",
+    "{user1} When i look into your eyes, i just wanna gut you open from the inside out with {user2}",
+    "{user1} ain't it so weird that you and {user2} get beat by your parents?",
 ]
 
 # Background task variables
