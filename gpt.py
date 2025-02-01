@@ -30,6 +30,14 @@ def get_random_insult():
         insults = file.readlines()
     return random.choice(insults).strip()
 
+def get_cheer_up_message():
+    if os.path.exists("sad.txt"):
+        with open("sad.txt", "r") as file:
+            messages = file.readlines()
+        if messages:
+            return random.choice(messages).strip()
+    return "Hey, things will get better! Stay strong!"  # Default message if the file is empty
+
 def is_sad(message):
     sad_keywords = ['sad', 'depressed', 'unhappy', 'feeling low', 'crying', 'miserable', 'down', 'heartbroken']
     return any(keyword in message.lower() for keyword in sad_keywords)
@@ -50,15 +58,9 @@ class MyClient(discord.Client):
             bot_reply = get_random_insult()
             await message.channel.send(bot_reply)
 
-        # Respond to sadness
+        # Respond to sadness using messages from sad.txt
         elif is_sad(message.content):
-            cheer_up_replies = [
-                "Hey, things will get better! You've got this!",
-                "I know it's tough, but you're stronger than you think!",
-                "I'm here for you! Let's turn that frown upside down!",
-                "Sending you positive vibes! You'll feel better soon!"
-            ]
-            bot_reply = random.choice(cheer_up_replies)
+            bot_reply = get_cheer_up_message()
             await message.channel.send(bot_reply)
 
         # Respond only to 'death' in the message
