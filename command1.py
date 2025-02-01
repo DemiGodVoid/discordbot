@@ -13,7 +13,6 @@ TOKEN = input("Please enter your Discord bot token: ")
 
 # File paths for storing persistent data
 TRIGGERS_FILE = "triggers.json"
-BANNED_WORDS_FILE = "banned_words.json"
 
 # Function to load JSON data
 def load_data(file_path):
@@ -29,7 +28,6 @@ def save_data(file_path, data):
 
 # Load persistent data
 triggers = load_data(TRIGGERS_FILE)  # Triggers per server
-banned_words = load_data(BANNED_WORDS_FILE)  # Banned words per server
 
 # List of funny meme templates
 meme_templates = [
@@ -80,7 +78,7 @@ async def send_meme_periodically(channel, interval):
 
 @client.event
 async def on_message(message):
-    global meme_task, meme_interval, triggers, banned_words
+    global meme_task, meme_interval, triggers
 
     if message.author == client.user:
         return
@@ -88,20 +86,12 @@ async def on_message(message):
     # Get server (guild) ID to store data per server
     guild_id = str(message.guild.id)  
 
-    # Ensure the guild has an entry in triggers and banned_words
+    # Ensure the guild has an entry in triggers
     if guild_id not in triggers:
         triggers[guild_id] = {}
-    if guild_id not in banned_words:
-        banned_words[guild_id] = []
 
     # Convert message to lowercase for case-insensitive checks
     msg_lower = message.content.lower()
-
-    # Check for banned words and delete message
-    for banned_word in banned_words[guild_id]:
-        if banned_word in msg_lower:
-            await message.delete()
-            return
 
     # Respond to a trigger message if it exists
     if msg_lower in triggers[guild_id]:
@@ -114,9 +104,8 @@ async def on_message(message):
     # Commands list
     if message.content == '!commands':
         await message.channel.send(
-            'Commands:\n\n!ping\n\n!gif text @user\n\n!meme\n\n!meme number (auto-send memes every X minutes)\n\n'
-            '!stopmeme\n\n!bmessage word\n\n!unbmessage word\n\n!bannedwords\n\n'
-            '!trigger message=message (set a trigger response)'
+            'Commands:\n\n!ping\n\n!meme\n\n!meme number (auto-send memes every X minutes)\n\n'
+            '!stopmeme\n\n!trigger message=message (set a trigger response)\n\n Death (just say death to talk to the bot!)\n\nDeath+Insult (type a message containing the words death and insult and the bot will roast you!)\n\nSad (just say sad, unhappy or so forth and death will cheer you up!)'
         )
 
     # Meme command
@@ -160,38 +149,6 @@ async def on_message(message):
             await message.channel.send("Auto-memes disabled.")
         else:
             await message.channel.send("Auto-memes are not currently running.")
-
-    # Bmessage command to add a banned word
-    if message.content.startswith('!bmessage '):
-        await message.delete()
-        word_to_ban = message.content[len('!bmessage '):].strip().lower()
-        if not word_to_ban:
-            await message.channel.send("Please specify a word to ban. Usage: !bmessage <word>")
-        elif word_to_ban in banned_words[guild_id]:
-            await message.channel.send(f"`{word_to_ban}` is already banned!")
-        else:
-            banned_words[guild_id].append(word_to_ban)
-            save_data(BANNED_WORDS_FILE, banned_words)  # Save persistently
-            await message.channel.send(f"`{word_to_ban}` has been added to the banned words list!")
-
-    # Unbmessage command to remove a banned word
-    if message.content.startswith('!unbmessage '):
-        word_to_unban = message.content[len('!unbmessage '):].strip().lower()
-        if not word_to_unban:
-            await message.channel.send("Please specify a word to unban. Usage: !unbmessage <word>")
-        elif word_to_unban not in banned_words[guild_id]:
-            await message.channel.send(f"`{word_to_unban}` is not in the banned words list!")
-        else:
-            banned_words[guild_id].remove(word_to_unban)
-            save_data(BANNED_WORDS_FILE, banned_words)  # Save persistently
-            await message.channel.send(f"`{word_to_unban}` has been removed from the banned words list!")
-
-    # List all banned words
-    if message.content == "!bannedwords":
-        if not banned_words[guild_id]:
-            await message.channel.send("No words are currently banned.")
-        else:
-            await message.channel.send(f"Banned words: {', '.join(banned_words[guild_id])}")
 
     # Trigger message command (store persistently)
     if message.content.startswith("!trigger "):
