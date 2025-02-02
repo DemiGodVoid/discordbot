@@ -1,8 +1,10 @@
 import discord
-from transformers import pipeline, AutoModelForCausalLM, AutoTokenizer
+import asyncio
 import os
 import random
+import cohere
 
+# Load token from file or prompt for it if not found
 def load_token():
     if os.path.exists("token.txt"):
         with open("token.txt", "r") as file:
@@ -15,36 +17,29 @@ def load_token():
         print("Token saved to token.txt.")
     return token
 
-model_name = 'microsoft/DialoGPT-medium'
-model = AutoModelForCausalLM.from_pretrained(model_name)
-tokenizer = AutoTokenizer.from_pretrained(model_name)
-generator = pipeline('text-generation', model=model, tokenizer=tokenizer)
+# Load Cohere API key from file or prompt for it if not found
+def load_cohere_api_key():
+    if os.path.exists("cohere_api_key.txt"):
+        with open("cohere_api_key.txt", "r") as file:
+            api_key = file.read().strip()
+        print("Cohere API key loaded from cohere_api_key.txt.")
+    else:
+        api_key = input("Please enter your Cohere API key: ")
+        with open("cohere_api_key.txt", "w") as file:
+            file.write(api_key)
+        print("Cohere API key saved to cohere_api_key.txt.")
+    return api_key
 
-def generate_response(prompt):
-    prompt = f"Human: {prompt}\nAI:"
-    response = generator(prompt, max_length=150, num_return_sequences=1, temperature=0.7, top_k=50)
-    return response[0]['generated_text'].split("AI:")[1].strip()
+# Initialize Cohere API client
+cohere_api_key = load_cohere_api_key()
+co = cohere.Client(cohere_api_key)
 
-def get_random_insult():
-    with open("insult.txt", "r") as file:
-        insults = file.readlines()
-    return random.choice(insults).strip()
-
-def get_cheer_up_message():
-    if os.path.exists("sad.txt"):
-        with open("sad.txt", "r") as file:
-            messages = file.readlines()
-        if messages:
-            return random.choice(messages).strip()
-    return "Hey, things will get better! Stay strong!"  # Default message if the file is empty
-
-def is_sad(message):
-    sad_keywords = ['sad', 'depressed', 'unhappy', 'feeling low', 'crying', 'miserable', 'down', 'heartbroken']
-    return any(keyword in message.lower() for keyword in sad_keywords)
-
+# Set up the bot client
 class MyClient(discord.Client):
     def __init__(self, intents):
         super().__init__(intents=intents)
+        self.last_sent_message = None  # To track the last sent message
+        self.is_active = False  # Track whether bot should respond to messages
 
     async def on_ready(self):
         print(f'We have logged in as {self.user}')
@@ -53,22 +48,65 @@ class MyClient(discord.Client):
         if message.author == self.user:
             return
 
-        # Respond to insults
-        if 'insult' in message.content.lower():
-            bot_reply = get_random_insult()
-            await message.channel.send(bot_reply)
+        # Check for start/stop commands
+        if message.content.lower() == "!start":
+            self.is_active = True
+            await message.channel.send("The bot is now active and will respond to messages!")
+        
+        elif message.content.lower() == "!stop":
+            self.is_active = False
+            await message.channel.send("The bot is now inactive and will stop responding to messages.")
+        
+        # Respond to messages if bot is active
+        if self.is_active:
+            try:
+                bot_reply = generate_response(message.content)
+                await message.channel.send(bot_reply)
+            except Exception as e:
+                await message.channel.send(f"Error occurred: {str(e)}")
 
-        # Respond to sadness using messages from sad.txt
-        elif is_sad(message.content):
-            bot_reply = get_cheer_up_message()
-            await message.channel.send(bot_reply)
+    async def send_random_message(self):
+        channel_id = 1335020264093651066  # Provided channel ID
+        channel = self.get_channel(channel_id)
 
-        # Respond only to 'death' in the message
-        elif 'death' in message.content.lower():
-            user_message = message.content
-            bot_reply = generate_response(user_message)
-            await message.channel.send(bot_reply)
+        if not channel:
+            print("Channel not found!")
+            return
 
+        while True:
+            # Random interval between 1 and 10 minutes (in seconds)
+            interval = random.randint(60, 600)  # 60 to 600 seconds (1 to 10 minutes)
+            await asyncio.sleep(interval)
+
+            # Generate a random response using the GPT model
+            bot_reply = generate_response("Generate a random reply")
+
+            print(f"Generated reply: {bot_reply}")  # Debugging line to check the generated reply
+
+            # Check if the generated response is the same as the last message sent
+            if bot_reply == self.last_sent_message:
+                print("Duplicate message detected, regenerating.")  # Debugging line
+                continue  # Skip sending the same message
+
+            if channel:
+                await channel.send(bot_reply)
+                self.last_sent_message = bot_reply  # Update the last sent message
+
+# Generate response using Cohere API
+def generate_response(prompt):
+    try:
+        # Replace 'command-xlarge' with the correct model name for your access level
+        response = co.generate(
+            model='command-xlarge',  # This is the model to use; adjust if needed
+            prompt=prompt,
+            max_tokens=150,
+            temperature=0.7
+        )
+        return response.generations[0].text.strip()  # Access the generated text correctly
+    except Exception as e:
+        return f"Error occurred: {str(e)}"
+
+# Main entry point to run the bot
 if __name__ == "__main__":
     intents = discord.Intents.default()
     intents.message_content = True
