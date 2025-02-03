@@ -1,7 +1,6 @@
 import discord
 import asyncio
 import os
-import random
 import cohere
 
 def load_token():
@@ -40,8 +39,6 @@ co = cohere.Client(cohere_api_key)
 class MyClient(discord.Client):
     def __init__(self, intents):
         super().__init__(intents=intents)
-        self.last_sent_message = None
-        self.is_active = False
         self.channel_id = load_channel_id()
 
     async def on_ready(self):
@@ -51,40 +48,14 @@ class MyClient(discord.Client):
         if message.author == self.user:
             return
 
-        if message.content.lower() == "!start":
-            self.is_active = True
-            await message.channel.send("The bot is now active and will respond to messages!")
-        
-        elif message.content.lower() == "!stop":
-            self.is_active = False
-            await message.channel.send("The bot is now inactive and will stop responding to messages.")
-        
-        if self.is_active:
-            try:
-                bot_reply = generate_response(message.content)
-                await message.channel.send(bot_reply)
-            except Exception as e:
-                await message.channel.send(f"Error occurred: {str(e)}")
-
-    async def send_random_message(self):
-        channel = self.get_channel(self.channel_id)
-
-        if not channel:
-            print("Channel not found!")
-            return
-
-        while True:
-            interval = random.randint(60, 600)
-            await asyncio.sleep(interval)
-
-            bot_reply = generate_response("Generate a random reply")
-
-            if bot_reply == self.last_sent_message:
-                continue
-
-            if channel:
-                await channel.send(bot_reply)
-                self.last_sent_message = bot_reply
+        if message.content.lower().startswith("!chat"):
+            user_message = message.content[6:].strip()
+            if user_message:
+                try:
+                    bot_reply = generate_response(user_message)
+                    await message.channel.send(bot_reply)
+                except Exception as e:
+                    await message.channel.send(f"Error occurred: {str(e)}")
 
 def generate_response(prompt):
     try:
