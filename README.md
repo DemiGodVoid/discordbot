@@ -1,10 +1,10 @@
-This is a regular discord bot, It also uses a gpt mindset running off
-Microsoft model: cohere API to help it give accuate replies.
+This is a normal discord bot with a built-in gpt model to help it chat with discord users within the server and it has built in commands to help run the server.(READ BELOW)
 -
-This github tool is being worked on, hoping to create a useful gpt bot that also has built in commands
-so discord servers can have a bot they can actually chat with and at the same time, set their server up with.
+Model used: cohere 
 -
-!commands Is how you can view the bots command list(over 5 commands so far.)
+You can chat with the bot simply by typing !chat and then your message, Example: "!chat hey, how are you?" will make the bot respond with it's own generated reponse.
 
-
-More will be coming to the bot!
+-
+To see the bots commands, simply type !commands. It's current commands is !set_rules/!rules/!meme/!meme number/!stopmeme/!chat .
+-
+!meme number simpy makes the bot auto meme every minute you put as the number, this is to make the server a little more fun. More will be added to the source code as time goes on.
