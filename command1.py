@@ -109,7 +109,7 @@ async def on_message(message):
     if message.content == '!commands':
         await message.channel.send(
             'Commands:\n\n!ping\n\n!meme\n\n!meme number (auto-send memes every X minutes)\n\n'
-            '!stopmeme\n\n!trigger message=message (set a trigger response)\n\n!set_rules message (set server rules)\n\n!rules (view server rules)\n\n!start (talk to the bot)\n\n!stop (make the bot stop replying)'
+            '!stopmeme\n\n!trigger message=message (set a trigger response)\n\n!set_rules message (set server rules)\n\n!rules (view server rules)\n\n!chat (!chat message, talk to the bot)\n\n'
         )
 
     # Meme command
