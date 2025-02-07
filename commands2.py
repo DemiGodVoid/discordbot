@@ -29,6 +29,7 @@ TOKEN = get_token()
 YOUTUBE_API_KEY = get_youtube_api_key()
 
 YOUTUBE_SEARCH_URL = "https://www.googleapis.com/youtube/v3/search"
+POLLINATIONS_URL = "https://image.pollinations.ai/prompt/{}"
 
 intents = discord.Intents.default()
 intents.message_content = True  
@@ -44,7 +45,7 @@ async def on_message(message):
         return
     
     if message.content == '!commands2':
-        await message.channel.send('Commands:\n\n!youtube title - name')
+        await message.channel.send('Commands:\n\n!youtube title - name\n!image prompt')
     
     if message.content.startswith('!youtube '):
         query = message.content[len('!youtube '):].strip()
@@ -56,6 +57,23 @@ async def on_message(message):
                 await message.channel.send("No results found.")
         else:
             await message.channel.send("Please provide a title and name. Example: !youtube Boffy - Pushing minecraft to its limits")
+    
+    if message.content.startswith('!image '):
+        prompt = message.content[len('!image '):].strip()
+        if prompt:
+            image_url = POLLINATIONS_URL.format(urllib.parse.quote(prompt))
+            image_path = f"generated_image.png"
+            
+            async with aiohttp.ClientSession() as session:
+                async with session.get(image_url) as resp:
+                    if resp.status == 200:
+                        with open(image_path, 'wb') as f:
+                            f.write(await resp.read())
+                        await message.channel.send(file=discord.File(image_path))
+                    else:
+                        await message.channel.send("Failed to generate image.")
+        else:
+            await message.channel.send("Please provide a prompt for the image. Example: !image futuristic city with flying cars")
 
 async def search_youtube(query):
     async with aiohttp.ClientSession() as session:
