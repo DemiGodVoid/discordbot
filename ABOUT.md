@@ -15,4 +15,4 @@ You can chat with the bot simply by typing !chat and then your message, Example:
 -
 To see the bots commands, simply type !commands. It's current commands is !set_rules/!rules/!meme/!meme number/!stopmeme/!chat .
 -
-!meme number simpy makes the bot auto meme every minute you put as the number, this is to make the server a little more fun. More will be added to the source code as time goes on.
+!meme number simply makes the bot auto meme every minute you put as the number, this is to make the server a little more fun. More will be added to the source code as time goes on.
