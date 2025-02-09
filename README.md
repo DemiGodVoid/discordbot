@@ -2,6 +2,13 @@ This is a normal discord bot with a built-in gpt model to help it chat with disc
 -
 Model used: cohere 
 -
+
+NEW:FEB/7TH/2025
+-
+Ai image generation: Have the discordbot generate any image you want via typing !image prompt
+-
+This will cause the discord bot to send your prompt to an Ai which will generate a image, the image is saved to the device, sent to the user and then deleted from the device the bots running off of!
+-
 You can chat with the bot simply by typing !chat and then your message, Example: "!chat hey, how are you?" will make the bot respond with it's own generated reponse.
 
 -
