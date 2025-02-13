@@ -66,11 +66,11 @@ async def on_message(message):
             '!set_rules message (set server rules)\n\n!rules (view server rules)\n\n!commands2 (More commands)'
         )
 
-    # 🔥 New !gif command that dynamically generates GIFs without an API key
+    # 🔥 New !gif command that sends GIF directly
     if message.content.startswith("!gif "):
-        search_term = message.content[len("!gif "):].strip()
-        tenor_url = f"https://tenor.com/search/{search_term.replace(' ', '-')}-gifs"  # Generate Tenor search link
-        await message.channel.send(tenor_url)  # Discord will embed the first GIF from Tenor
+        search_term = message.content[len("!gif "):].strip().replace(" ", "+")
+        tenor_gif_url = f"https://tenor.com/search?q={search_term}&media_filter=minimal&contentfilter=off"
+        await message.channel.send(tenor_gif_url)  # Only sends GIF, no preview text
 
     if message.content.startswith("!trigger "):
         parts = message.content[len("!trigger "):].split("=")
