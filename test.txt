@@ -2,6 +2,8 @@ import discord
 import random
 import json
 import os
+import aiohttp
+import asyncio
 
 intents = discord.Intents.default()
 intents.message_content = True
@@ -66,11 +68,25 @@ async def on_message(message):
             '!set_rules message (set server rules)\n\n!rules (view server rules)\n\n!commands2 (More commands)'
         )
 
-    # 🔥 New !gif command that sends GIF directly
+    # 🔥 Updated !gif command: Fetch, Download, Send, Delete GIF
     if message.content.startswith("!gif "):
         search_term = message.content[len("!gif "):].strip().replace(" ", "+")
-        tenor_gif_url = f"https://tenor.com/search?q={search_term}&media_filter=minimal&contentfilter=off"
-        await message.channel.send(tenor_gif_url)  # Only sends GIF, no preview text
+        tenor_url = f"https://tenor.com/search?q={search_term}&media_filter=minimal&contentfilter=off"
+
+        async with aiohttp.ClientSession() as session:
+            async with session.get(tenor_url) as response:
+                if response.status == 200:
+                    gif_url = str(response.url)  # Get the direct GIF link
+                    gif_path = "temp_gif.gif"
+
+                    async with session.get(gif_url) as gif_response:
+                        if gif_response.status == 200:
+                            with open(gif_path, "wb") as f:
+                                f.write(await gif_response.read())  # Save GIF locally
+
+                            await message.channel.send(file=discord.File(gif_path))  # Send GIF
+
+                            os.remove(gif_path)  # Delete the file after sending
 
     if message.content.startswith("!trigger "):
         parts = message.content[len("!trigger "):].split("=")
