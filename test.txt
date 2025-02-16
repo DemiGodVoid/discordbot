@@ -1,103 +1,111 @@
 import discord
-import random
-import json
+from discord.ext import commands
 import os
-import aiohttp
 import asyncio
 
-intents = discord.Intents.default()
-intents.message_content = True
-intents.members = True  
-client = discord.Client(intents=intents)
+TOKEN_FILE = "token.txt"
 
-TOKEN = input("Please enter your Discord bot token: ")
+if not os.path.exists(TOKEN_FILE):
+    with open(TOKEN_FILE, "w") as f:
+        f.write(input("Enter your bot token: "))
 
-TRIGGERS_FILE = "triggers.json"
-RULES_FILE = "rules.json"
+with open(TOKEN_FILE, "r") as f:
+    TOKEN = f.read().strip()
 
-def load_data(file_path):
-    if os.path.exists(file_path):
-        with open(file_path, "r") as f:
-            return json.load(f)
-    return {}
+bot = commands.Bot(command_prefix="!")
 
-def save_data(file_path, data):
-    with open(file_path, "w") as f:
-        json.dump(data, f, indent=4)
+game_active = False
+players = []
+turn = 0
+board = [["⚪" for _ in range(7)] for _ in range(6)]
+player_symbols = {}
 
-triggers = load_data(TRIGGERS_FILE) 
-rules = load_data(RULES_FILE)  
+async def display_board(ctx):
+    board_str = "\n".join(" ".join(row) for row in board)
+    column_numbers = "1️⃣ 2️⃣ 3️⃣ 4️⃣ 5️⃣ 6️⃣ 7️⃣"
+    await ctx.send(f"```\n{board_str}\n```\n{column_numbers}")
 
-@client.event
-async def on_ready():
-    print(f'We have logged in as {client.user}')
+def drop_piece(column, symbol):
+    for row in reversed(board):
+        if row[column] == "⚪":
+            row[column] = symbol
+            return True
+    return False
 
-@client.event
-async def on_message(message):
-    if message.author == client.user:
+def check_winner():
+    for row in range(6):
+        for col in range(7):
+            if board[row][col] == "⚪":
+                continue
+            symbol = board[row][col]
+            # Check horizontal, vertical, and diagonal
+            directions = [(0,1), (1,0), (1,1), (1,-1)]
+            for dr, dc in directions:
+                try:
+                    if all(board[row + dr*i][col + dc*i] == symbol for i in range(4)):
+                        return symbol
+                except IndexError:
+                    continue
+    return None
+
+@bot.command()
+async def connect4(ctx):
+    global game_active, players, board, turn, player_symbols
+    if game_active:
+        await ctx.send("A game is already in progress!")
         return
+    game_active = True
+    players = []
+    board = [["⚪" for _ in range(7)] for _ in range(6)]
+    await ctx.send("Connect 4 started! Type `!1` to join as player 1 (🔴) and `!2` to join as player 2 (🟡)")
 
-    guild_id = str(message.guild.id)
+@bot.command()
+async def one(ctx):
+    global players, player_symbols
+    if len(players) >= 1:
+        await ctx.send("Player 1 already taken! Waiting for Player 2.")
+        return
+    players.append(ctx.author)
+    player_symbols[ctx.author] = "🔴"
+    await ctx.send(f"{ctx.author.mention} joined as Player 1! Waiting for Player 2.")
 
-    if guild_id not in triggers:
-        triggers[guild_id] = {}
-    if guild_id not in rules:
-        rules[guild_id] = {}
+@bot.command()
+async def two(ctx):
+    global game_active, turn
+    if len(players) != 1:
+        await ctx.send("Player 1 must join first with `!1`.")
+        return
+    if ctx.author in players:
+        await ctx.send("You are already in the game!")
+        return
+    players.append(ctx.author)
+    player_symbols[ctx.author] = "🟡"
+    await ctx.send(f"{ctx.author.mention} joined as Player 2! All players found. Let's start!")
+    await display_board(ctx)
+    await ctx.send(f"{players[turn].mention}, it's your turn! Choose a column (1-7).")
 
-    msg_lower = message.content.lower()
+@bot.command()
+async def drop(ctx, column: int):
+    global turn, game_active
+    if not game_active or len(players) < 2:
+        await ctx.send("The game isn't running! Use `!connect4` to start a game.")
+        return
+    if ctx.author != players[turn]:
+        await ctx.send("It's not your turn!")
+        return
+    if column < 1 or column > 7:
+        await ctx.send("Invalid column! Pick a number between 1-7.")
+        return
+    if not drop_piece(column - 1, player_symbols[ctx.author]):
+        await ctx.send("Column full! Pick another.")
+        return
+    await display_board(ctx)
+    winner = check_winner()
+    if winner:
+        await ctx.send(f"{players[turn].mention} ({winner}) wins! 🎉")
+        game_active = False
+        return
+    turn = 1 - turn
+    await ctx.send(f"{players[turn].mention}, it's your turn! Choose a column (1-7).")
 
-    if msg_lower in triggers[guild_id]:
-        await message.channel.send(triggers[guild_id][msg_lower])
-
-    if message.content == '!ping':
-        await message.channel.send('PONG')
-
-    if message.content == '!commands':
-        await message.channel.send(
-            'Commands:\n\n!ping\n\n!gif message (send a related GIF)\n\n'
-            '!trigger message=message (set a trigger response)\n\n'
-            '!set_rules message (set server rules)\n\n!rules (view server rules)\n\n!commands2 (More commands)'
-        )
-
-    # 🔥 Updated !gif command: Sends only the GIF, no extra text
-    if message.content.startswith("!gif "):
-        search_term = message.content[len("!gif "):].strip().replace(" ", "+")
-        tenor_api_url = f"https://g.tenor.com/v1/search?q={search_term}&key=LIVDSRZULELA&limit=1"
-
-        async with aiohttp.ClientSession() as session:
-            async with session.get(tenor_api_url) as response:
-                if response.status == 200:
-                    data = await response.json()
-                    if "results" in data and len(data["results"]) > 0:
-                        gif_url = data["results"][0]["media"][0]["gif"]["url"]
-                        await message.channel.send(gif_url)  # Sends only the GIF (auto-embeds)
-                        return
-        
-        await message.channel.send("Couldn't find a GIF for that.")
-
-    if message.content.startswith("!trigger "):
-        parts = message.content[len("!trigger "):].split("=")
-        if len(parts) == 2:
-            trigger, response = parts[0].strip().lower(), parts[1].strip()
-            triggers[guild_id][trigger] = response
-            save_data(TRIGGERS_FILE, triggers)  
-            await message.channel.send(f"Trigger set: '{trigger}' → '{response}'")
-        else:
-            await message.channel.send("Invalid format. Use: `!trigger message=message`")
-
-    if message.content.startswith("!set_rules "):
-        rules_text = message.content[len("!set_rules "):].strip()
-        if rules_text:
-            rules[guild_id] = rules_text
-            save_data(RULES_FILE, rules)  
-            await message.channel.send(f"Server rules set:\n{rules_text}")
-        else:
-            await message.channel.send("Please provide the rules after the command. Usage: `!set_rules <rules>`")
-
-    if message.content == "!rules":
-        if guild_id in rules and rules[guild_id]:
-            await message.channel.send(f"Server Rules:\n\n{rules[guild_id]}")
-        else:
-            await message.channel.send("No rules have been set for this server yet.")
-
-client.run(TOKEN)
+bot.run(TOKEN)
