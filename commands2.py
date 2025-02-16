@@ -45,7 +45,7 @@ async def on_message(message):
         return
     
     if message.content == '!commands2':
-        await message.channel.send('Commands:\n\n!youtube title - name\n!image prompt')
+        await message.channel.send('Commands:\n\n!youtube title - name\n!image prompt\n!games')
     
     if message.content.startswith('!youtube '):
         query = message.content[len('!youtube '):].strip()
@@ -74,6 +74,19 @@ async def on_message(message):
                         await message.channel.send("Failed to generate image.")
         else:
             await message.channel.send("Please provide a prompt for the image. Example: !image futuristic city with flying cars")
+
+            
+    if message.content == '!games':
+        games_message = """
+     Bots Games
+     -------------
+     !connect4 (Play a nice game of Connect 4!)
+     -------------
+     Each game will give you points! use them points to purchase in-game items from other games!
+     -------------
+        """
+        await message.channel.send(games_message)
+
 
 async def search_youtube(query):
     async with aiohttp.ClientSession() as session:
