@@ -125,7 +125,8 @@ async def on_message(message):
         try:
             column = int(message.content.strip())
             if 1 <= column <= 7:
-                await process_move(message.channel, column)
+                ctx = await bot.get_context(message)  # Create context for the message
+                await process_move(ctx, column)
                 return
         except ValueError:
             pass
