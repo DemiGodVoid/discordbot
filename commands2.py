@@ -79,11 +79,10 @@ async def on_message(message):
     if message.content == '!games':
         games_message = """
      Bots Games
-     -------------
-     !connect4 (Play a nice game of Connect 4!)
-     -------------
-     Each game will give you points! use them points to purchase in-game items from other games!
-     -------------
+     ------
+     !connect4 - Play connect 4 and win!
+     ------
+     You can earn points and spend it in other games!
         """
         await message.channel.send(games_message)
 
