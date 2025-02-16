@@ -62,7 +62,7 @@ async def connect4(ctx):
     players = []
     board = [["⚪" for _ in range(7)] for _ in range(6)]
     await ctx.send(
-        "Connect 4 started! Type `!1` to join as Player 1 (🔴) and `!2` to join as Player 2 (🟡)."
+        "Connect 4 started! Type `!one` to join as Player 1 (🔴) and `!two` to join as Player 2 (🟡)."
     )
 
 @bot.command()
