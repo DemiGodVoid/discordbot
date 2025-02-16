@@ -1,7 +1,6 @@
 import discord
 from discord.ext import commands
 import os
-import asyncio
 
 TOKEN_FILE = "token.txt"
 
@@ -62,7 +61,9 @@ async def connect4(ctx):
     game_active = True
     players = []
     board = [["⚪" for _ in range(7)] for _ in range(6)]
-    await ctx.send("Connect 4 started! Type `!1` to join as player 1 (🔴) and `!2` to join as player 2 (🟡)")
+    await ctx.send(
+        "Connect 4 started! Type `!1` to join as Player 1 (🔴) and `!2` to join as Player 2 (🟡)."
+    )
 
 @bot.command()
 async def one(ctx):
@@ -87,10 +88,13 @@ async def two(ctx):
     player_symbols[ctx.author] = "🟡"
     await ctx.send(f"{ctx.author.mention} joined as Player 2! All players found. Let's start!")
     await display_board(ctx)
-    await ctx.send(f"{players[turn].mention}, it's your turn! Choose a column (1-7).")
+    await ctx.send(f"{players[turn].mention}, it's your turn! Choose a column (1-7) by typing the number.")
 
 @bot.command()
 async def drop(ctx, column: int):
+    await process_move(ctx, column)
+
+async def process_move(ctx, column: int):
     global turn, game_active
     if not game_active or len(players) < 2:
         await ctx.send("The game isn't running! Use `!connect4` to start a game.")
@@ -112,6 +116,20 @@ async def drop(ctx, column: int):
         return
     turn = 1 - turn
     await ctx.send(f"{players[turn].mention}, it's your turn! Choose a column (1-7).")
+
+@bot.event
+async def on_message(message):
+    if message.author == bot.user:
+        return
+    if game_active and len(players) == 2 and message.author in players:
+        try:
+            column = int(message.content.strip())
+            if 1 <= column <= 7:
+                await process_move(message.channel, column)
+                return
+        except ValueError:
+            pass
+    await bot.process_commands(message)
 
 @bot.event
 async def on_ready():
