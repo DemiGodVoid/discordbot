@@ -3,7 +3,15 @@ This is a normal discord bot with a built-in gpt model to help it chat with disc
 Model used: cohere 
 -
 
-NEW:FEB/7TH/2025
+NEW: FEB/16TH/2025
+-
+Added Games and a point system
+-
+type !commands2 --> !games to see the bots games
+type !points to see every members point count within the server thats played the game!
+-
+-
+OLD:FEB/7TH/2025
 -
 Ai image generation: Have the discordbot generate any image you want via typing !image prompt
 -
