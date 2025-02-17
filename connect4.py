@@ -1,8 +1,11 @@
 import discord
 from discord.ext import commands
 import os
+import random
 
 TOKEN_FILE = "token.txt"
+POINTS_FILE = "points.json"
+import json
 
 if not os.path.exists(TOKEN_FILE):
     with open(TOKEN_FILE, "w") as f:
@@ -10,6 +13,19 @@ if not os.path.exists(TOKEN_FILE):
 
 with open(TOKEN_FILE, "r") as f:
     TOKEN = f.read().strip()
+
+# Load player points
+def load_points():
+    if os.path.exists(POINTS_FILE):
+        with open(POINTS_FILE, "r") as f:
+            return json.load(f)
+    return {}
+
+def save_points(points):
+    with open(POINTS_FILE, "w") as f:
+        json.dump(points, f)
+
+player_points = load_points()
 
 intents = discord.Intents.default()
 intents.messages = True
@@ -42,7 +58,6 @@ def check_winner():
             if board[row][col] == "⚪":
                 continue
             symbol = board[row][col]
-            # Check horizontal, vertical, and diagonal
             directions = [(0,1), (1,0), (1,1), (1,-1)]
             for dr, dc in directions:
                 try:
@@ -61,9 +76,7 @@ async def connect4(ctx):
     game_active = True
     players = []
     board = [["⚪" for _ in range(7)] for _ in range(6)]
-    await ctx.send(
-        "Connect 4 started! Type `!one` to join as Player 1 (🔴) and `!two` to join as Player 2 (🟡)."
-    )
+    await ctx.send("Connect 4 started! Type `!one` to join as Player 1 (🔴) and `!two` to join as Player 2 (🟡).")
 
 @bot.command()
 async def one(ctx):
@@ -79,7 +92,7 @@ async def one(ctx):
 async def two(ctx):
     global game_active, turn
     if len(players) != 1:
-        await ctx.send("Player 1 must join first with `!1`.")
+        await ctx.send("Player 1 must join first with `!one`.")
         return
     if ctx.author in players:
         await ctx.send("You are already in the game!")
@@ -111,26 +124,34 @@ async def process_move(ctx, column: int):
     await display_board(ctx)
     winner = check_winner()
     if winner:
-        await ctx.send(f"{players[turn].mention} ({winner}) wins! 🎉")
+        await reward_winner(ctx, players[turn])
         game_active = False
         return
     turn = 1 - turn
     await ctx.send(f"{players[turn].mention}, it's your turn! Choose a column (1-7).")
 
-@bot.event
-async def on_message(message):
-    if message.author == bot.user:
-        return
-    if game_active and len(players) == 2 and message.author in players:
-        try:
-            column = int(message.content.strip())
-            if 1 <= column <= 7:
-                ctx = await bot.get_context(message)  # Create context for the message
-                await process_move(ctx, column)
-                return
-        except ValueError:
-            pass
-    await bot.process_commands(message)
+async def reward_winner(ctx, winner):
+    user_id = str(winner.id)
+    reward_tier = random.choices(["low", "medium", "high"], [50, 35, 15])[0]
+    if reward_tier == "low":
+        points = random.randint(0, 100)
+    elif reward_tier == "medium":
+        points = random.randint(100, 250)
+    else:
+        points = random.randint(250, 500)
+    
+    if user_id not in player_points:
+        player_points[user_id] = 0
+    player_points[user_id] += points
+    save_points(player_points)
+    
+    await ctx.send(f"{winner.mention} ({player_symbols[winner]}) wins! 🎉 You won {points} points!")
+
+@bot.command()
+async def points(ctx):
+    sorted_points = sorted(player_points.items(), key=lambda x: x[1], reverse=True)
+    leaderboard = "\n".join([f"<@{user_id}>: {points} points" for user_id, points in sorted_points])
+    await ctx.send(f"**Leaderboard:**\n{leaderboard}")
 
 @bot.event
 async def on_ready():
