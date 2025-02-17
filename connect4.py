@@ -154,6 +154,24 @@ async def points(ctx):
     await ctx.send(f"**Leaderboard:**\n{leaderboard}")
 
 @bot.event
+async def on_message(message):
+    if message.author == bot.user:
+        return
+
+    ctx = await bot.get_context(message)
+
+    if game_active and len(players) == 2 and message.author in players:
+        try:
+            column = int(message.content.strip())
+            if 1 <= column <= 7:
+                await process_move(ctx, column)
+                return
+        except ValueError:
+            pass
+
+    await bot.process_commands(message)
+
+@bot.event
 async def on_ready():
     print(f"Logged in as {bot.user}")
 
