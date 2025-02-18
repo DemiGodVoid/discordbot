@@ -1,106 +1,98 @@
 import discord
-import os
 import asyncio
-import urllib.parse
-import aiohttp
+import os
+import cohere
 
-# Function to read or ask for the Discord token
-def get_token():
+def load_token():
     if os.path.exists("token.txt"):
         with open("token.txt", "r") as file:
-            return file.read().strip()
-    token = input("Please enter your Discord bot token: ").strip()
-    with open("token.txt", "w") as file:
-        file.write(token)
+            token = file.read().strip()
+    else:
+        token = input("Please enter your Discord token: ")
+        with open("token.txt", "w") as file:
+            file.write(token)
     return token
 
-# Function to read or ask for the YouTube API key
-def get_youtube_api_key():
-    if os.path.exists("youtube_api.txt"):
-        with open("youtube_api.txt", "r") as file:
-            return file.read().strip()
-    api_key = input("Please enter your YouTube API key: ").strip()
-    with open("youtube_api.txt", "w") as file:
-        file.write(api_key)
+def load_cohere_api_key():
+    if os.path.exists("cohere_api_key.txt"):
+        with open("cohere_api_key.txt", "r") as file:
+            api_key = file.read().strip()
+    else:
+        api_key = input("Please enter your Cohere API key: ")
+        with open("cohere_api_key.txt", "w") as file:
+            file.write(api_key)
     return api_key
 
-# Get credentials
-TOKEN = get_token()
-YOUTUBE_API_KEY = get_youtube_api_key()
+def load_channel_id():
+    if os.path.exists("channel_id.txt"):
+        with open("channel_id.txt", "r") as file:
+            channel_id = int(file.read().strip())
+    else:
+        channel_id = input("Please enter the channel ID: ")
+        with open("channel_id.txt", "w") as file:
+            file.write(str(channel_id))
+    return channel_id
 
-YOUTUBE_SEARCH_URL = "https://www.googleapis.com/youtube/v3/search"
-POLLINATIONS_URL = "https://image.pollinations.ai/prompt/{}"
+cohere_api_key = load_cohere_api_key()
+co = cohere.Client(cohere_api_key)
 
-intents = discord.Intents.default()
-intents.message_content = True  
-client = discord.Client(intents=intents)
+class MyClient(discord.Client):
+    def __init__(self, intents):
+        super().__init__(intents=intents)
+        self.channel_id = load_channel_id()
+        self.chat_history = {}  # Dictionary to store user chat history
 
-@client.event
-async def on_ready():
-    print(f'We have logged in as {client.user}')
+    async def on_ready(self):
+        print(f'We have logged in as {self.user}')
 
-@client.event
-async def on_message(message):
-    if message.author == client.user:
-        return
-    
-    if message.content == '!commands2':
-        await message.channel.send('Commands:\n\n!youtube title - name\n!image prompt\n!games')
-    
-    if message.content.startswith('!youtube '):
-        query = message.content[len('!youtube '):].strip()
-        if query:
-            video_url = await search_youtube(query)
-            if video_url:
-                await message.channel.send(f"Here's the top YouTube result: {video_url}")
-            else:
-                await message.channel.send("No results found.")
-        else:
-            await message.channel.send("Please provide a title and name. Example: !youtube Boffy - Pushing minecraft to its limits")
-    
-    if message.content.startswith('!image '):
-        prompt = message.content[len('!image '):].strip()
-        if prompt:
-            image_url = POLLINATIONS_URL.format(urllib.parse.quote(prompt))
-            image_path = f"generated_image.png"
-            
-            async with aiohttp.ClientSession() as session:
-                async with session.get(image_url) as resp:
-                    if resp.status == 200:
-                        with open(image_path, 'wb') as f:
-                            f.write(await resp.read())
-                        await message.channel.send(file=discord.File(image_path))
-                    else:
-                        await message.channel.send("Failed to generate image.")
-        else:
-            await message.channel.send("Please provide a prompt for the image. Example: !image futuristic city with flying cars")
+    async def on_message(self, message):
+        if message.author == self.user:
+            return
 
-            
-    if message.content == '!games':
-        games_message = """
-        Bots Games
-        -------------
-        !connect4 (Play a nice game of Connect 4!)
-        -------------
-        Each game will give you points! use them points to purchase in-game items from other games!
-        -------------
-        """
-        await message.channel.send(games_message)
+        if message.content.lower().startswith("!chat"):
+            user_message = message.content[6:].strip()
+            user_id = message.author.id  # Unique user ID
 
+            if user_message:
+                try:
+                    bot_reply = self.generate_response(user_id, user_message)
+                    await message.channel.send(bot_reply)
+                except Exception as e:
+                    await message.channel.send(f"Error occurred: {str(e)}")
 
-async def search_youtube(query):
-    async with aiohttp.ClientSession() as session:
-        async with session.get(YOUTUBE_SEARCH_URL, params={
-            'part': 'snippet',
-            'q': query,
-            'key': YOUTUBE_API_KEY,
-            'maxResults': 1,
-            'type': 'video'
-        }) as response:
-            data = await response.json()
-            if 'items' in data and data['items']:
-                video_id = data['items'][0]['id']['videoId']
-                return f"https://www.youtube.com/watch?v={video_id}"
-            return None
+    def generate_response(self, user_id, user_message):
+        """Generates a response while maintaining conversation history"""
+        if user_id not in self.chat_history:
+            self.chat_history[user_id] = []  # Create a new history for the user
 
-client.run(TOKEN)
+        # Append latest message to history
+        self.chat_history[user_id].append(f"User: {user_message}")
+
+        # Keep only the last 5 exchanges to avoid excessive memory use
+        self.chat_history[user_id] = self.chat_history[user_id][-10:]
+
+        # Create full chat history for context
+        history_text = "\n".join(self.chat_history[user_id]) + "\nBot:"
+
+        try:
+            response = co.generate(
+                model='command-xlarge',
+                prompt=history_text,
+                max_tokens=150,
+                temperature=0.7
+            )
+
+            bot_reply = response.generations[0].text.strip()
+            self.chat_history[user_id].append(f"Bot: {bot_reply}")  # Save bot response
+
+            return bot_reply
+        except Exception as e:
+            return f"Error occurred: {str(e)}"
+
+if __name__ == "__main__":
+    intents = discord.Intents.default()
+    intents.message_content = True
+
+    discord_token = load_token()
+    client = MyClient(intents=intents)
+    client.run(discord_token)
