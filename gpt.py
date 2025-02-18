@@ -40,6 +40,7 @@ class MyClient(discord.Client):
     def __init__(self, intents):
         super().__init__(intents=intents)
         self.channel_id = load_channel_id()
+        self.chat_history = {}  # Dictionary to store user chat history
 
     async def on_ready(self):
         print(f'We have logged in as {self.user}')
@@ -50,24 +51,43 @@ class MyClient(discord.Client):
 
         if message.content.lower().startswith("!chat"):
             user_message = message.content[6:].strip()
+            user_id = message.author.id  # Unique user ID
+
             if user_message:
                 try:
-                    bot_reply = generate_response(user_message)
+                    bot_reply = self.generate_response(user_id, user_message)
                     await message.channel.send(bot_reply)
                 except Exception as e:
                     await message.channel.send(f"Error occurred: {str(e)}")
 
-def generate_response(prompt):
-    try:
-        response = co.generate(
-            model='command-xlarge',
-            prompt=prompt,
-            max_tokens=150,
-            temperature=0.7
-        )
-        return response.generations[0].text.strip()
-    except Exception as e:
-        return f"Error occurred: {str(e)}"
+    def generate_response(self, user_id, user_message):
+        """Generates a response while maintaining conversation history"""
+        if user_id not in self.chat_history:
+            self.chat_history[user_id] = []  # Create a new history for the user
+
+        # Append latest message to history
+        self.chat_history[user_id].append(f"User: {user_message}")
+
+        # Keep only the last 5 exchanges to avoid excessive memory use
+        self.chat_history[user_id] = self.chat_history[user_id][-10:]
+
+        # Create full chat history for context
+        history_text = "\n".join(self.chat_history[user_id]) + "\nBot:"
+
+        try:
+            response = co.generate(
+                model='command-xlarge',
+                prompt=history_text,
+                max_tokens=150,
+                temperature=0.7
+            )
+
+            bot_reply = response.generations[0].text.strip()
+            self.chat_history[user_id].append(f"Bot: {bot_reply}")  # Save bot response
+
+            return bot_reply
+        except Exception as e:
+            return f"Error occurred: {str(e)}"
 
 if __name__ == "__main__":
     intents = discord.Intents.default()
