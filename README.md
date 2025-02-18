@@ -4,7 +4,7 @@ Model used: cohere
 -
 NEW:FEB/17TH/2025
 -
-Updated: Gpt mindset to remember what it last said to you, so better help accurately conversate with members of the sever.
+Updated: Gpt mindset to remember what it last said to you to better help accurately conversate with members of the sever.
 -
 OLD: FEB/16TH/2025
 -
