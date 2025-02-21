@@ -61,7 +61,7 @@ class MyClient(discord.Client):
                     await message.channel.send(f"Error occurred: {str(e)}")
 
     def generate_response(self, user_id, user_message):
-        """Generates a response with a joke in every reply"""
+        """Generates a response while maintaining conversation history"""
         if user_id not in self.chat_history:
             self.chat_history[user_id] = []  # Create a new history for the user
 
@@ -74,13 +74,10 @@ class MyClient(discord.Client):
         # Create full chat history for context
         history_text = "\n".join(self.chat_history[user_id]) + "\nBot:"
 
-        # Update the prompt to ensure the AI adds a joke to the response
-        prompt = history_text + "\nMake sure your response includes a joke."
-
         try:
             response = co.generate(
                 model='command-xlarge',
-                prompt=prompt,
+                prompt=history_text,
                 max_tokens=150,
                 temperature=0.7
             )
