@@ -2,12 +2,8 @@ import discord
 from discord.ext import commands
 import yt_dlp
 import asyncio
-import audioread
-import io
 
 intents = discord.Intents.default()
-intents.voice_states = True  # Allow tracking voice state updates
-intents.guilds = True  # Ensure the bot can access guild (server) info
 intents.message_content = True  # Allow bot to read message content (required for commands)
 
 bot = commands.Bot(command_prefix='!', intents=intents)
@@ -24,52 +20,11 @@ async def on_ready():
     print(f'Logged in as {bot.user}')
 
 @bot.command()
-async def join(ctx):
-    # Ensure the user is in a voice channel
-    if ctx.author.voice is None or ctx.author.voice.channel is None:
-        await ctx.send("You must be in a voice channel to use this command!")
-        return
-
-    voice_channel = ctx.author.voice.channel
-
-    try:
-        # If the bot is already connected, move it to the user’s voice channel
-        if ctx.voice_client:
-            await ctx.voice_client.move_to(voice_channel)
-        else:
-            # Connect the bot to the user's current voice channel
-            vc = await voice_channel.connect()
-            await ctx.send(f"Connected to {voice_channel}")
-            print(f"Bot connected to {voice_channel}")
-    except Exception as e:
-        print(f"Error connecting to voice channel: {e}")
-        await ctx.send("I couldn't join the voice channel. Please check my permissions and try again.")
-
-@bot.command()
 async def que(ctx, url: str):
-    # Ensure the user is in a voice channel
-    if ctx.author.voice is None or ctx.author.voice.channel is None:
-        await ctx.send("You must be in a voice channel to use this command!")
-        return
-
-    voice_channel = ctx.author.voice.channel
-
-    try:
-        # If the bot is already connected, move it to the user’s voice channel
-        if ctx.voice_client:
-            await ctx.voice_client.move_to(voice_channel)
-        else:
-            vc = await voice_channel.connect()
-            print(f"Bot connected to {voice_channel}")
-    except Exception as e:
-        print(f"Error connecting to voice channel: {e}")
-        await ctx.send("I couldn't join the voice channel. Please check my permissions and try again.")
-        return
-
-    vc = ctx.voice_client
-
+    # Download the audio as an MP3 file
     ydl_opts = {
-        'format': 'bestaudio',
+        'format': 'bestaudio/best',
+        'outtmpl': 'downloads/%(id)s.%(ext)s',  # Save to a temporary file
         'postprocessors': [{
             'key': 'FFmpegExtractAudio',
             'preferredcodec': 'mp3',
@@ -79,37 +34,29 @@ async def que(ctx, url: str):
 
     try:
         with yt_dlp.YoutubeDL(ydl_opts) as ydl:
-            info = ydl.extract_info(url, download=False)
-            url2 = info['url']
+            info = ydl.extract_info(url, download=True)
+            filename = ydl.prepare_filename(info)
+            filename = filename.rsplit('.', 1)[0] + '.mp3'  # Ensure the correct file extension
     except Exception as e:
-        print(f"Error extracting audio: {e}")
+        print(f"Error downloading audio: {e}")
         await ctx.send("There was an error fetching the audio from the provided URL.")
         return
 
-    # Use audioread to decode and stream the audio
-    with audioread.audio_open(url2) as f:
-        pcm_data = io.BytesIO(f.read())  # Read the audio into memory
-
-    # Stream the audio using FFmpegPCMAudio (without PyNaCl)
+    # Send the audio file to the text channel
     try:
-        vc.play(discord.FFmpegPCMAudio(pcm_data), after=lambda e: print(f'Finished playing: {e}'))
-        await ctx.send(f'Now playing: {info["title"]}')
+        await ctx.send(f"Now playing: {info['title']}", file=discord.File(filename))
     except Exception as e:
-        print(f"Error playing audio: {e}")
-        await ctx.send("There was an error playing the audio.")
-
-    # Wait until audio is finished before disconnecting
-    while vc.is_playing():
-        await asyncio.sleep(1)
-
-    await vc.disconnect()
+        print(f"Error sending file: {e}")
+        await ctx.send("There was an error sending the audio file.")
+    
+    # Clean up the downloaded file
+    try:
+        os.remove(filename)
+    except:
+        pass
 
 @bot.command()
 async def leave(ctx):
-    if ctx.voice_client:
-        await ctx.voice_client.disconnect()
-        await ctx.send("Disconnected from the voice channel.")
-    else:
-        await ctx.send("I'm not in a voice channel.")
+    await ctx.send("I don't need to leave since I'm not connected to a voice channel.")
 
 bot.run(get_token())
