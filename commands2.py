@@ -67,7 +67,7 @@ async def on_message(message):
         return
     
     if message.content == '!commands2':
-        await message.channel.send('Commands:\n\n!youtube title - name\n!image prompt(This takes 1000 points from you, play some games to gain points!)\n!games')
+        await message.channel.send('Commands:\n\n!youtube title - name\n\n!chat prompt - Chat with the bots gpt side!(Takes 500 points a chat)\n\n!image prompt(This takes 1000 points from you, play some games to gain points!)\n!games')
 
     if message.content.startswith('!youtube '):
         query = message.content[len('!youtube '):].strip()
