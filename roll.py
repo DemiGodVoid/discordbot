@@ -84,6 +84,30 @@ async def bal(ctx):
     points = user_points.get(user_id, 0)
     await ctx.send(f"You have {points} points.")
 
+# Command: !pay @user123 amount
+@bot.command()
+async def pay(ctx, member: discord.Member, amount: int):
+    user_id = str(ctx.author.id)
+    recipient_id = str(member.id)
+    user_points = load_points()
+
+    # Check if the user has enough points
+    current_points = user_points.get(user_id, 0)
+    if amount > current_points:
+        await ctx.send(f"You don't have enough points! You currently have {current_points} points.")
+        return
+
+    # Transfer points
+    user_points[user_id] = current_points - amount
+    recipient_points = user_points.get(recipient_id, 0)
+    user_points[recipient_id] = recipient_points + amount
+
+    # Save updated points
+    save_points(user_points)
+
+    # Inform the users
+    await ctx.send(f"{ctx.author.mention} has transferred {amount} points to {member.mention}.")
+
 # Error handler for cooldown
 @roll.error
 @spin.error
