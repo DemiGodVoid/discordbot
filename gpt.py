@@ -56,31 +56,33 @@ class MyClient(discord.Client):
             if user_message:
                 try:
                     bot_reply = self.generate_response(user_id, user_message)
-                    bot_reply = bot_reply.replace("Cohere", "Discord bot")  # Replace "Cohere" with "Discord bot"
-                    await self.send_long_message(message.channel, bot_reply)
+                    await message.channel.send(bot_reply)
                 except Exception as e:
                     await message.channel.send(f"Error occurred: {str(e)}")
 
     def generate_response(self, user_id, user_message):
-        """Generates a response while maintaining conversation history with a rude/sarcastic tone"""
+        """Generates a response with a joke in every reply"""
         if user_id not in self.chat_history:
             self.chat_history[user_id] = []  # Create a new history for the user
 
         # Append latest message to history
         self.chat_history[user_id].append(f"User: {user_message}")
 
-        # Keep only the last 10 exchanges to avoid excessive memory use
+        # Keep only the last 5 exchanges to avoid excessive memory use
         self.chat_history[user_id] = self.chat_history[user_id][-10:]
 
-        # Create full chat history for context with a rude tone
-        history_text = "\n".join(self.chat_history[user_id]) + "\nBot (rude):"
+        # Create full chat history for context
+        history_text = "\n".join(self.chat_history[user_id]) + "\nBot:"
+
+        # Update the prompt to ensure the AI adds a joke to the response
+        prompt = history_text + "\nMake sure your response includes a joke."
 
         try:
             response = co.generate(
                 model='command-xlarge',
-                prompt=history_text + " Respond in a rude, sarcastic, or blunt manner.",
-                max_tokens=500,
-                temperature=0.9
+                prompt=prompt,
+                max_tokens=150,
+                temperature=0.7
             )
 
             bot_reply = response.generations[0].text.strip()
@@ -89,15 +91,6 @@ class MyClient(discord.Client):
             return bot_reply
         except Exception as e:
             return f"Error occurred: {str(e)}"
-
-    async def send_long_message(self, channel, text):
-        """Splits long messages and ensures continuation until the message is fully sent"""
-        max_length = 2000
-        parts = [text[i:i+max_length] for i in range(0, len(text), max_length)]
-        
-        for part in parts:
-            await channel.send(part)
-            await asyncio.sleep(1)  # Small delay to ensure proper order
 
 if __name__ == "__main__":
     intents = discord.Intents.default()
