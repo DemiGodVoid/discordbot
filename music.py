@@ -2,6 +2,8 @@ import discord
 from discord.ext import commands
 import yt_dlp
 import asyncio
+import audioread
+import io
 
 intents = discord.Intents.default()
 intents.voice_states = True  # Allow tracking voice state updates
@@ -39,12 +41,6 @@ async def join(ctx):
             vc = await voice_channel.connect()
             await ctx.send(f"Connected to {voice_channel}")
             print(f"Bot connected to {voice_channel}")
-    except discord.errors.PrivilegedIntentsRequired as e:
-        print(f"Bot lacks required permissions: {e}")
-        await ctx.send("The bot doesn't have the required permissions to connect.")
-    except discord.errors.ClientException as e:
-        print(f"Voice client exception: {e}")
-        await ctx.send(f"An error occurred: {e}")
     except Exception as e:
         print(f"Error connecting to voice channel: {e}")
         await ctx.send("I couldn't join the voice channel. Please check my permissions and try again.")
@@ -65,14 +61,6 @@ async def que(ctx, url: str):
         else:
             vc = await voice_channel.connect()
             print(f"Bot connected to {voice_channel}")
-    except discord.errors.PrivilegedIntentsRequired as e:
-        print(f"Bot lacks required permissions: {e}")
-        await ctx.send("The bot doesn't have the required permissions to connect.")
-        return
-    except discord.errors.ClientException as e:
-        print(f"Voice client exception: {e}")
-        await ctx.send(f"An error occurred: {e}")
-        return
     except Exception as e:
         print(f"Error connecting to voice channel: {e}")
         await ctx.send("I couldn't join the voice channel. Please check my permissions and try again.")
@@ -98,8 +86,13 @@ async def que(ctx, url: str):
         await ctx.send("There was an error fetching the audio from the provided URL.")
         return
     
-    # Play the audio
-    vc.play(discord.FFmpegPCMAudio(url2), after=lambda e: print(f'Finished playing: {e}'))
+    # Use audioread to decode and stream the audio
+    with audioread.audio_open(url2) as f:
+        # Create an audio stream from the downloaded file
+        pcm_data = io.BytesIO(f.read())  # Read the audio into memory
+    
+    # Now, stream the audio using FFmpegPCMAudio
+    vc.play(discord.FFmpegPCMAudio(pcm_data), after=lambda e: print(f'Finished playing: {e}'))
     
     await ctx.send(f'Now playing: {info["title"]}')
     
