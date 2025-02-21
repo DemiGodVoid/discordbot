@@ -68,12 +68,15 @@ class MyClient(discord.Client):
             user_id = message.author.id  # Unique user ID
             points_data = load_points()
 
+            # Debugging: Print current points for user
+            print(f"User {user_id} has {points_data.get(str(user_id), 0)} points.")  # Debugging line
+
             # Check if the user has 500 points
-            if user_id in points_data and points_data[user_id] >= 500:
+            if str(user_id) in points_data and points_data[str(user_id)] >= 500:
                 # Deduct 500 points
-                points_data[user_id] -= 500
+                points_data[str(user_id)] -= 500
                 save_points(points_data)
-                
+
                 await message.channel.send("500 points successfully taken")
 
                 if user_message:
