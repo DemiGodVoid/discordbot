@@ -2,8 +2,13 @@ This is a normal discord bot with a built-in gpt model to help it chat with disc
 -
 Model used: cohere 
 -
-
-NEW: FEB/20TH/2025
+NEW: FEB/21ST/2025
+-
+UPDATED: Point system (Now have to spend your points on certain commands in order to use them)
+-
+FIXED: !points command, now will display everyones points correctly from points.json!
+-
+OLD: FEB/20TH/2025
 -
 UPDATED: Gpt mindset to be rude during conversations, makes it more fun to talk to!
 -
