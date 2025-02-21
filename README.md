@@ -2,7 +2,12 @@ This is a normal discord bot with a built-in gpt model to help it chat with disc
 -
 Model used: cohere 
 -
-NEW:FEB/17TH/2025
+
+NEW: FEB/20TH/2025
+-
+UPDATED: Gpt mindset to be rude during conversations, makes it more fun to talk to!
+
+OLD:FEB/17TH/2025
 -
 Updated: Gpt mindset to remember what it last said to you to better help accurately conversate with members of the sever.
 -
