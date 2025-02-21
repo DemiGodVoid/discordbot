@@ -66,18 +66,21 @@ class MyClient(discord.Client):
             self.chat_history[user_id] = []  # Create a new history for the user
 
         # Append latest message to history
-        self.chat_history[user_id].append(f"User: {user_message}")
+        self.chat_history[user_id].append(f":User  {user_message}")
 
-        # Keep only the last 5 exchanges to avoid excessive memory use
+        # Keep only the last 10 exchanges to avoid excessive memory use
         self.chat_history[user_id] = self.chat_history[user_id][-10:]
 
         # Create full chat history for context
         history_text = "\n".join(self.chat_history[user_id]) + "\nBot:"
 
+        # Modify the prompt to encourage rudeness
+        rude_prompt = f"{history_text}\nRespond in a rude and sarcastic manner:\nBot:"
+
         try:
             response = co.generate(
                 model='command-xlarge',
-                prompt=history_text,
+                prompt=rude_prompt,
                 max_tokens=150,
                 temperature=0.7
             )
