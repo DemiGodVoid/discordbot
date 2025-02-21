@@ -2,6 +2,7 @@ import discord
 import asyncio
 import os
 import cohere
+import json
 
 def load_token():
     if os.path.exists("token.txt"):
@@ -33,6 +34,19 @@ def load_channel_id():
             file.write(str(channel_id))
     return channel_id
 
+def load_points():
+    """Load points from points.json."""
+    if os.path.exists("points.json"):
+        with open("points.json", "r") as file:
+            return json.load(file)
+    else:
+        return {}
+
+def save_points(points_data):
+    """Save updated points to points.json."""
+    with open("points.json", "w") as file:
+        json.dump(points_data, file)
+
 cohere_api_key = load_cohere_api_key()
 co = cohere.Client(cohere_api_key)
 
@@ -52,13 +66,24 @@ class MyClient(discord.Client):
         if message.content.lower().startswith("!chat"):
             user_message = message.content[6:].strip()
             user_id = message.author.id  # Unique user ID
+            points_data = load_points()
 
-            if user_message:
-                try:
-                    bot_reply = self.generate_response(user_id, user_message, message)
-                    await message.channel.send(bot_reply)
-                except Exception as e:
-                    await message.channel.send(f"Error occurred: {str(e)}")
+            # Check if the user has 500 points
+            if user_id in points_data and points_data[user_id] >= 500:
+                # Deduct 500 points
+                points_data[user_id] -= 500
+                save_points(points_data)
+                
+                await message.channel.send("500 points successfully taken")
+
+                if user_message:
+                    try:
+                        bot_reply = self.generate_response(user_id, user_message, message)
+                        await message.channel.send(bot_reply)
+                    except Exception as e:
+                        await message.channel.send(f"Error occurred: {str(e)}")
+            else:
+                await message.channel.send("Not enough points, please play one of the games using !games and come back when you have 500+ points")
 
     def generate_response(self, user_id, user_message, message):
         """Generates a response while maintaining conversation history and mentioning users"""
