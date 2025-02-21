@@ -83,6 +83,7 @@ async def on_message(message):
      !connect4 - Play connect 4 and win!
      !roll amount - Gamble
      !spin - Get points!
+     !bal - Check Points!
      ------
      You can earn points and spend it in other games!
         """
