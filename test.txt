@@ -68,7 +68,7 @@ class MyClient(discord.Client):
         # Append latest message to history
         self.chat_history[user_id].append(f"User: {user_message}")
 
-        # Keep only the last 5 exchanges to avoid excessive memory use
+        # Keep only the last 10 exchanges to avoid excessive memory use
         self.chat_history[user_id] = self.chat_history[user_id][-10:]
 
         # Create full chat history for context
@@ -83,6 +83,12 @@ class MyClient(discord.Client):
             )
 
             bot_reply = response.generations[0].text.strip()
+
+            # **Word filter to remove undesired words**
+            forbidden_words = ["cohere", "helpful", "AI", "assistance"]
+            for word in forbidden_words:
+                bot_reply = bot_reply.replace(word, "")
+
             self.chat_history[user_id].append(f"Bot: {bot_reply}")  # Save bot response
 
             return bot_reply
