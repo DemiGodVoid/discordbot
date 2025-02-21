@@ -3,6 +3,7 @@ import os
 import asyncio
 import urllib.parse
 import aiohttp
+import json
 
 # Function to read or ask for the Discord token
 def get_token():
@@ -23,6 +24,27 @@ def get_youtube_api_key():
     with open("youtube_api.txt", "w") as file:
         file.write(api_key)
     return api_key
+
+# Function to read user points from points.json
+def get_user_points(user_id):
+    if os.path.exists("points.json"):
+        with open("points.json", "r") as file:
+            points_data = json.load(file)
+        return points_data.get(str(user_id), 0)
+    return 0
+
+# Function to update user points in points.json
+def update_user_points(user_id, new_points):
+    if os.path.exists("points.json"):
+        with open("points.json", "r") as file:
+            points_data = json.load(file)
+    else:
+        points_data = {}
+
+    points_data[str(user_id)] = new_points
+
+    with open("points.json", "w") as file:
+        json.dump(points_data, file, indent=4)
 
 # Get credentials
 TOKEN = get_token()
@@ -46,7 +68,7 @@ async def on_message(message):
     
     if message.content == '!commands2':
         await message.channel.send('Commands:\n\n!youtube title - name\n!image prompt\n!games')
-    
+
     if message.content.startswith('!youtube '):
         query = message.content[len('!youtube '):].strip()
         if query:
@@ -59,6 +81,17 @@ async def on_message(message):
             await message.channel.send("Please provide a title and name. Example: !youtube Boffy - Pushing minecraft to its limits")
     
     if message.content.startswith('!image '):
+        user_id = message.author.id
+        points = get_user_points(user_id)
+
+        if points < 1000:
+            await message.channel.send(f"Not enough points, please get 1000 points.")
+            return
+        
+        # Deduct 1000 points from the user
+        update_user_points(user_id, points - 1000)
+        await message.channel.send("1000 points taken successfully")
+
         prompt = message.content[len('!image '):].strip()
         if prompt:
             image_url = POLLINATIONS_URL.format(urllib.parse.quote(prompt))
@@ -74,7 +107,6 @@ async def on_message(message):
                         await message.channel.send("Failed to generate image.")
         else:
             await message.channel.send("Please provide a prompt for the image. Example: !image futuristic city with flying cars")
-
             
     if message.content == '!games':
         games_message = """
