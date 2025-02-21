@@ -1,47 +1,72 @@
-Loop thread traceback (most recent call last):
-  File "/data/data/com.termux/files/home/discordbot/gpt.py", line 101, in <module>            client.run(discord_token)
-  File "/data/data/com.termux/files/usr/lib/python3.12/site-packages/discord/client.py", line 869, in run
-    asyncio.run(runner())                                                                   File "/data/data/com.termux/files/usr/lib/python3.12/asyncio/runners.py", line 194, in run
-    return runner.run(main)
-  File "/data/data/com.termux/files/usr/lib/python3.12/asyncio/runners.py", line 118, in run
-    return self._loop.run_until_complete(task)
-  File "/data/data/com.termux/files/usr/lib/python3.12/asyncio/base_events.py", line 673, in run_until_complete                                                                         self.run_forever()
-  File "/data/data/com.termux/files/usr/lib/python3.12/asyncio/base_events.py", line 640, in run_forever
-    self._run_once()                                                                        File "/data/data/com.termux/files/usr/lib/python3.12/asyncio/base_events.py", line 1992, in _run_once
-    handle._run()
-  File "/data/data/com.termux/files/usr/lib/python3.12/asyncio/events.py", line 88, in _run
-    self._context.run(self._callback, *self._args)                                          File "/data/data/com.termux/files/usr/lib/python3.12/site-packages/discord/client.py", line 449, in _run_event
-    await coro(*args, **kwargs)
-  File "/data/data/com.termux/files/home/discordbot/gpt.py", line 58, in on_message
-    bot_reply = self.generate_response(user_id, user_message)
-  File "/data/data/com.termux/files/home/discordbot/gpt.py", line 81, in generate_response
-    response = co.generate(
-  File "/data/data/com.termux/files/usr/lib/python3.12/site-packages/cohere/client.py", line 122, in generate
-    response = self.__request(json_body, cohere.GENERATE_URL)
-  File "/data/data/com.termux/files/usr/lib/python3.12/site-packages/cohere/client.py", line 279, in __request
-    response = requests.request('POST', url,                                                File "/data/data/com.termux/files/usr/lib/python3.12/site-packages/requests/api.py", line 59, in request
-    return session.request(method=method, url=url, **kwargs)
-  File "/data/data/com.termux/files/usr/lib/python3.12/site-packages/requests/sessions.py", line 589, in request
-    resp = self.send(prep, **send_kwargs)
-  File "/data/data/com.termux/files/usr/lib/python3.12/site-packages/requests/sessions.py", line 703, in send
-    r = adapter.send(request, **kwargs)
-  File "/data/data/com.termux/files/usr/lib/python3.12/site-packages/requests/adapters.py", line 667, in send
-    resp = conn.urlopen(
-  File "/data/data/com.termux/files/usr/lib/python3.12/site-packages/urllib3/connectionpool.py", line 787, in urlopen
-    response = self._make_request(
-  File "/data/data/com.termux/files/usr/lib/python3.12/site-packages/urllib3/connectionpool.py", line 534, in _make_request
-    response = conn.getresponse()
-  File "/data/data/com.termux/files/usr/lib/python3.12/site-packages/urllib3/connection.py", line 516, in getresponse
-    httplib_response = super().getresponse()
-  File "/data/data/com.termux/files/usr/lib/python3.12/http/client.py", line 1428, in getresponse
-    response.begin()
-  File "/data/data/com.termux/files/usr/lib/python3.12/http/client.py", line 331, in begin
-    version, status, reason = self._read_status()
-  File "/data/data/com.termux/files/usr/lib/python3.12/http/client.py", line 292, in _read_status
-    line = str(self.fp.readline(_MAXLINE + 1), "iso-8859-1")
-  File "/data/data/com.termux/files/usr/lib/python3.12/socket.py", line 720, in readinto
-    return self._sock.recv_into(b)
-  File "/data/data/com.termux/files/usr/lib/python3.12/ssl.py", line 1251, in recv_into
-    return self.read(nbytes, buffer)
-  File "/data/data/com.termux/files/usr/lib/python3.12/ssl.py", line 1103, in read
-    return self._sslobj.read(len, buffer)
+import discord
+import random
+import json
+from discord.ext import commands
+
+# Function to load the bot token from token.txt
+def load_token():
+    try:
+        with open("token.txt", "r") as f:
+            return f.read().strip()  # Strip removes any extra spaces or newline characters
+    except FileNotFoundError:
+        raise FileNotFoundError("token.txt not found! Please provide a token in the token.txt file.")
+
+# Create a bot instance with command prefix "!"
+bot = commands.Bot(command_prefix="!")
+
+# Load points from points.json or create an empty one
+def load_points():
+    try:
+        with open("points.json", "r") as f:
+            return json.load(f)
+    except FileNotFoundError:
+        return {}
+
+def save_points(points):
+    with open("points.json", "w") as f:
+        json.dump(points, f)
+
+# Command: !roll
+@bot.command()
+async def roll(ctx):
+    points = random.randint(1, 1000)
+    result = "won" if random.choice([True, False]) else "lost"
+    
+    # Update user points
+    user_id = str(ctx.author.id)
+    user_points = load_points()
+    user_points[user_id] = user_points.get(user_id, 0) + points
+    save_points(user_points)
+
+    # Respond with result and points
+    await ctx.send(f"You {result}! You gained {points} points.")
+
+# Command: !spin
+@bot.command()
+async def spin(ctx):
+    points = random.randint(1, 3000)
+
+    # Update user points
+    user_id = str(ctx.author.id)
+    user_points = load_points()
+    user_points[user_id] = user_points.get(user_id, 0) + points
+    save_points(user_points)
+
+    await ctx.send(f"You spun and gained {points} points!")
+
+# Command: !bal
+@bot.command()
+async def bal(ctx):
+    user_id = str(ctx.author.id)
+    user_points = load_points()
+
+    # Get the user's points or 0 if they have no points
+    points = user_points.get(user_id, 0)
+    await ctx.send(f"You have {points} points.")
+
+# Run the bot
+try:
+    token = load_token()
+    bot.run(token)
+except FileNotFoundError as e:
+    print(e)
