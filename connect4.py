@@ -19,12 +19,10 @@ def load_points():
     if os.path.exists(POINTS_FILE):
         with open(POINTS_FILE, "r") as f:
             points_data = json.load(f)
-            print(f"Loaded points: {points_data}")  # Debugging line to check loaded points
             return points_data
     return {}
 
 def save_points(points):
-    print(f"Saving points: {points}")  # Debugging line to check what points are being saved
     with open(POINTS_FILE, "w") as f:
         json.dump(points, f)
 
@@ -95,7 +93,7 @@ async def one(ctx):
 async def two(ctx):
     global game_active, turn
     if len(players) != 1:
-        await ctx.send("Player 1 must join first with `!one`.")
+        await ctx.send("Player 1 must join first with `!one`.") 
         return
     if ctx.author in players:
         await ctx.send("You are already in the game!")
@@ -143,6 +141,8 @@ async def reward_winner(ctx, winner):
     else:
         points = random.randint(250, 500)
 
+    # Update the points
+    player_points = load_points()
     if user_id not in player_points:
         player_points[user_id] = 0
     player_points[user_id] += points
@@ -152,6 +152,8 @@ async def reward_winner(ctx, winner):
 
 @bot.command()
 async def points(ctx):
+    # Reload the points file each time the command is used
+    player_points = load_points()
     sorted_points = sorted(player_points.items(), key=lambda x: x[1], reverse=True)
     leaderboard = "\n".join([f"<@{user_id}>: {points} points" for user_id, points in sorted_points])
     await ctx.send(f"**Leaderboard:**\n{leaderboard}")
