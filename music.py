@@ -1,6 +1,6 @@
 import discord
 from discord.ext import commands
-import youtube_dl
+import yt_dlp
 import asyncio
 
 intents = discord.Intents.default()
@@ -37,7 +37,7 @@ async def que(ctx, url: str):
         }],
     }
     
-    with youtube_dl.YoutubeDL(ydl_opts) as ydl:
+    with yt_dlp.YoutubeDL(ydl_opts) as ydl:
         info = ydl.extract_info(url, download=False)
         url2 = info['url']
     
