@@ -55,20 +55,20 @@ class MyClient(discord.Client):
 
             if user_message:
                 try:
-                    bot_reply = self.generate_response(user_id, user_message)
+                    bot_reply = self.generate_response(user_id, user_message, message)
                     await message.channel.send(bot_reply)
                 except Exception as e:
                     await message.channel.send(f"Error occurred: {str(e)}")
 
-    def generate_response(self, user_id, user_message):
-        """Generates a response while maintaining conversation history"""
+    def generate_response(self, user_id, user_message, message):
+        """Generates a response while maintaining conversation history and mentioning users"""
         if user_id not in self.chat_history:
             self.chat_history[user_id] = []  # Create a new history for the user
 
         # Append latest message to history
-        self.chat_history[user_id].append(f":User  {user_message}")
+        self.chat_history[user_id].append(f"User: {user_message}")
 
-        # Keep only the last 10 exchanges to avoid excessive memory use
+        # Keep only the last 10 exchanges
         self.chat_history[user_id] = self.chat_history[user_id][-10:]
 
         # Create full chat history for context
@@ -87,6 +87,14 @@ class MyClient(discord.Client):
 
             bot_reply = response.generations[0].text.strip()
             self.chat_history[user_id].append(f"Bot: {bot_reply}")  # Save bot response
+
+            # Mention the user
+            bot_reply = f"{message.author.mention} {bot_reply}"
+
+            # If message contains mentions, include them in response
+            if message.mentions:
+                mentioned_users = " ".join(user.mention for user in message.mentions)
+                bot_reply = f"{mentioned_users} {bot_reply}"
 
             return bot_reply
         except Exception as e:
