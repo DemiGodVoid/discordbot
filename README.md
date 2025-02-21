@@ -5,7 +5,7 @@ Model used: cohere
 
 NEW: FEB/20TH/2025
 -
-UPDATED: Gpt mindset to make jokes during conversations, makes it more fun to talk to!
+UPDATED: Gpt mindset to be rude during conversations, makes it more fun to talk to!
 
 OLD:FEB/17TH/2025
 -
