@@ -84,6 +84,7 @@ async def on_message(message):
      !roll amount - Gamble
      !spin - Get points!
      !bal - Check Points!
+     !points - See Everyones points!
      ------
      You can earn points and spend it in other games!
         """
