@@ -81,6 +81,8 @@ async def on_message(message):
      Bots Games
      ------
      !connect4 - Play connect 4 and win!
+     !roll amount - Gamble
+     !spin - Get points!
      ------
      You can earn points and spend it in other games!
         """
