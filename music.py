@@ -22,7 +22,36 @@ async def on_ready():
     print(f'Logged in as {bot.user}')
 
 @bot.command()
+async def join(ctx):
+    # Ensure the user is in a voice channel
+    if ctx.author.voice is None or ctx.author.voice.channel is None:
+        await ctx.send("You must be in a voice channel to use this command!")
+        return
+
+    voice_channel = ctx.author.voice.channel
+    
+    try:
+        # If the bot is already connected, move it to the user’s voice channel
+        if ctx.voice_client:
+            await ctx.voice_client.move_to(voice_channel)
+        else:
+            # Connect the bot to the user's current voice channel
+            vc = await voice_channel.connect()
+            await ctx.send(f"Connected to {voice_channel}")
+            print(f"Bot connected to {voice_channel}")
+    except discord.errors.PrivilegedIntentsRequired as e:
+        print(f"Bot lacks required permissions: {e}")
+        await ctx.send("The bot doesn't have the required permissions to connect.")
+    except discord.errors.ClientException as e:
+        print(f"Voice client exception: {e}")
+        await ctx.send(f"An error occurred: {e}")
+    except Exception as e:
+        print(f"Error connecting to voice channel: {e}")
+        await ctx.send("I couldn't join the voice channel. Please check my permissions and try again.")
+
+@bot.command()
 async def que(ctx, url: str):
+    # Ensure the user is in a voice channel
     if ctx.author.voice is None or ctx.author.voice.channel is None:
         await ctx.send("You must be in a voice channel to use this command!")
         return
@@ -30,11 +59,20 @@ async def que(ctx, url: str):
     voice_channel = ctx.author.voice.channel
     
     try:
+        # If the bot is already connected, move it to the user’s voice channel
         if ctx.voice_client:
             await ctx.voice_client.move_to(voice_channel)
         else:
             vc = await voice_channel.connect()
             print(f"Bot connected to {voice_channel}")
+    except discord.errors.PrivilegedIntentsRequired as e:
+        print(f"Bot lacks required permissions: {e}")
+        await ctx.send("The bot doesn't have the required permissions to connect.")
+        return
+    except discord.errors.ClientException as e:
+        print(f"Voice client exception: {e}")
+        await ctx.send(f"An error occurred: {e}")
+        return
     except Exception as e:
         print(f"Error connecting to voice channel: {e}")
         await ctx.send("I couldn't join the voice channel. Please check my permissions and try again.")
@@ -60,10 +98,12 @@ async def que(ctx, url: str):
         await ctx.send("There was an error fetching the audio from the provided URL.")
         return
     
+    # Play the audio
     vc.play(discord.FFmpegPCMAudio(url2), after=lambda e: print(f'Finished playing: {e}'))
     
     await ctx.send(f'Now playing: {info["title"]}')
     
+    # Wait until audio is finished before disconnecting
     while vc.is_playing():
         await asyncio.sleep(1)
     
