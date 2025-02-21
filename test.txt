@@ -2,6 +2,7 @@ import discord
 import asyncio
 import os
 import cohere
+import re  # Import regex for stronger filtering
 
 def load_token():
     if os.path.exists("token.txt"):
@@ -84,10 +85,18 @@ class MyClient(discord.Client):
 
             bot_reply = response.generations[0].text.strip()
 
-            # **Word filter to remove undesired words**
+            # **Advanced Word Filter (removes entire sentences)**
             forbidden_words = ["cohere", "helpful", "AI", "assistance"]
-            for word in forbidden_words:
-                bot_reply = bot_reply.replace(word, "")
+            filtered_sentences = [
+                sentence for sentence in re.split(r'(?<=[.!?])\s+', bot_reply)
+                if not any(word.lower() in sentence.lower() for word in forbidden_words)
+            ]
+
+            bot_reply = " ".join(filtered_sentences).strip()
+
+            # If the entire response gets removed, send a generic message
+            if not bot_reply:
+                bot_reply = "I'm not sure how to respond to that."
 
             self.chat_history[user_id].append(f"Bot: {bot_reply}")  # Save bot response
 
