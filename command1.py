@@ -1,20 +1,30 @@
 import discord
-import random
 import json
 import os
 import aiohttp
-import asyncio
 
+# Set up bot intents
 intents = discord.Intents.default()
 intents.message_content = True
-intents.members = True
+intents.members = True  # Required to detect member joins
 client = discord.Client(intents=intents)
 
-TOKEN = input("Please enter your Discord bot token: ")
+# Load or request bot token
+TOKEN_FILE = "token.txt"
 
+if os.path.exists(TOKEN_FILE):
+    with open(TOKEN_FILE, "r") as f:
+        TOKEN = f.read().strip()
+else:
+    TOKEN = input("Please enter your Discord bot token: ").strip()
+    with open(TOKEN_FILE, "w") as f:
+        f.write(TOKEN)
+
+# File paths
 TRIGGERS_FILE = "triggers.json"
 RULES_FILE = "rules.json"
 
+# Load data functions
 def load_data(file_path):
     if os.path.exists(file_path):
         with open(file_path, "r") as f:
@@ -25,12 +35,27 @@ def save_data(file_path, data):
     with open(file_path, "w") as f:
         json.dump(data, f, indent=4)
 
+# Load triggers and rules
 triggers = load_data(TRIGGERS_FILE)
 rules = load_data(RULES_FILE)
 
 @client.event
 async def on_ready():
     print(f'We have logged in as {client.user}')
+
+@client.event
+async def on_member_join(member):
+    """Send rules in the channel where the member joined."""
+    guild_id = str(member.guild.id)
+
+    if guild_id in rules and rules[guild_id]:
+        rule_message = f"Welcome to **{member.guild.name}**, {member.mention}!\n\n**Server Rules:**\n{rules[guild_id]}"
+
+        # Find the first available text channel where the bot can send messages
+        for channel in member.guild.text_channels:
+            if channel.permissions_for(member.guild.me).send_messages:
+                await channel.send(rule_message)
+                break
 
 @client.event
 async def on_message(message):
@@ -101,4 +126,3 @@ async def on_message(message):
             await message.channel.send("No rules have been set for this server yet.")
 
 client.run(TOKEN)
-                                                                     
