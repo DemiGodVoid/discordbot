@@ -6,6 +6,8 @@ Model used: cohere
 NEW: FEB/20TH/2025
 -
 UPDATED: Gpt mindset to be rude during conversations, makes it more fun to talk to!
+ADDED: More games, !roll & !spin with !bal to check your points!
+-
 
 OLD:FEB/17TH/2025
 -
