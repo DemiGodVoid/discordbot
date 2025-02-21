@@ -6,6 +6,7 @@ import asyncio
 intents = discord.Intents.default()
 intents.voice_states = True  # Allow tracking voice state updates
 intents.guilds = True  # Ensure the bot can access guild (server) info
+intents.message_content = True  # Allow bot to read message content (required for commands)
 
 bot = commands.Bot(command_prefix='!', intents=intents)
 
