@@ -5,6 +5,7 @@ import asyncio
 
 intents = discord.Intents.default()
 intents.voice_states = True  # Allow tracking voice state updates
+intents.guilds = True  # Ensure the bot can access guild (server) info
 
 bot = commands.Bot(command_prefix='!', intents=intents)
 
@@ -26,7 +27,19 @@ async def que(ctx, url: str):
         return
     
     voice_channel = ctx.author.voice.channel
-    vc = await voice_channel.connect()
+    
+    try:
+        if ctx.voice_client:
+            await ctx.voice_client.move_to(voice_channel)
+        else:
+            vc = await voice_channel.connect()
+            print(f"Bot connected to {voice_channel}")
+    except Exception as e:
+        print(f"Error connecting to voice channel: {e}")
+        await ctx.send("I couldn't join the voice channel. Please check my permissions and try again.")
+        return
+    
+    vc = ctx.voice_client
     
     ydl_opts = {
         'format': 'bestaudio',
@@ -37,9 +50,14 @@ async def que(ctx, url: str):
         }],
     }
     
-    with yt_dlp.YoutubeDL(ydl_opts) as ydl:
-        info = ydl.extract_info(url, download=False)
-        url2 = info['url']
+    try:
+        with yt_dlp.YoutubeDL(ydl_opts) as ydl:
+            info = ydl.extract_info(url, download=False)
+            url2 = info['url']
+    except Exception as e:
+        print(f"Error extracting audio: {e}")
+        await ctx.send("There was an error fetching the audio from the provided URL.")
+        return
     
     vc.play(discord.FFmpegPCMAudio(url2), after=lambda e: print(f'Finished playing: {e}'))
     
@@ -49,6 +67,14 @@ async def que(ctx, url: str):
         await asyncio.sleep(1)
     
     await vc.disconnect()
+
+@bot.command()
+async def leave(ctx):
+    if ctx.voice_client:
+        await ctx.voice_client.disconnect()
+        await ctx.send("Disconnected from the voice channel.")
+    else:
+        await ctx.send("I'm not in a voice channel.")
 
 @bot.event
 async def on_voice_state_update(member, before, after):
