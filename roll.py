@@ -2,6 +2,7 @@ import discord
 import random
 import json
 from discord.ext import commands
+from discord.ext.commands import CommandOnCooldown
 
 # Function to load the bot token from token.txt
 def load_token():
@@ -32,6 +33,7 @@ def save_points(points):
 
 # Command: !roll <amount>
 @bot.command()
+@commands.cooldown(1, 60, commands.BucketType.user)  # 1 use per 60 seconds per user
 async def roll(ctx, amount: int):
     user_id = str(ctx.author.id)
     user_points = load_points()
@@ -60,6 +62,7 @@ async def roll(ctx, amount: int):
 
 # Command: !spin
 @bot.command()
+@commands.cooldown(1, 60, commands.BucketType.user)  # 1 use per 60 seconds per user
 async def spin(ctx):
     points = random.randint(1, 3000)
 
@@ -80,6 +83,13 @@ async def bal(ctx):
     # Get the user's points or 0 if they have no points
     points = user_points.get(user_id, 0)
     await ctx.send(f"You have {points} points.")
+
+# Error handler for cooldown
+@roll.error
+@spin.error
+async def cooldown_error(ctx, error):
+    if isinstance(error, CommandOnCooldown):
+        await ctx.send(f"You're on cooldown! Please try again in {round(error.retry_after, 2)} seconds.")
 
 # Run the bot
 try:
