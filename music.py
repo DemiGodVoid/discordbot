@@ -31,7 +31,7 @@ async def join(ctx):
         return
 
     voice_channel = ctx.author.voice.channel
-    
+
     try:
         # If the bot is already connected, move it to the user’s voice channel
         if ctx.voice_client:
@@ -51,9 +51,9 @@ async def que(ctx, url: str):
     if ctx.author.voice is None or ctx.author.voice.channel is None:
         await ctx.send("You must be in a voice channel to use this command!")
         return
-    
+
     voice_channel = ctx.author.voice.channel
-    
+
     try:
         # If the bot is already connected, move it to the user’s voice channel
         if ctx.voice_client:
@@ -65,9 +65,9 @@ async def que(ctx, url: str):
         print(f"Error connecting to voice channel: {e}")
         await ctx.send("I couldn't join the voice channel. Please check my permissions and try again.")
         return
-    
+
     vc = ctx.voice_client
-    
+
     ydl_opts = {
         'format': 'bestaudio',
         'postprocessors': [{
@@ -76,7 +76,7 @@ async def que(ctx, url: str):
             'preferredquality': '192',
         }],
     }
-    
+
     try:
         with yt_dlp.YoutubeDL(ydl_opts) as ydl:
             info = ydl.extract_info(url, download=False)
@@ -85,21 +85,23 @@ async def que(ctx, url: str):
         print(f"Error extracting audio: {e}")
         await ctx.send("There was an error fetching the audio from the provided URL.")
         return
-    
+
     # Use audioread to decode and stream the audio
     with audioread.audio_open(url2) as f:
-        # Create an audio stream from the downloaded file
         pcm_data = io.BytesIO(f.read())  # Read the audio into memory
-    
-    # Now, stream the audio using FFmpegPCMAudio
-    vc.play(discord.FFmpegPCMAudio(pcm_data), after=lambda e: print(f'Finished playing: {e}'))
-    
-    await ctx.send(f'Now playing: {info["title"]}')
-    
+
+    # Stream the audio using FFmpegPCMAudio (without PyNaCl)
+    try:
+        vc.play(discord.FFmpegPCMAudio(pcm_data), after=lambda e: print(f'Finished playing: {e}'))
+        await ctx.send(f'Now playing: {info["title"]}')
+    except Exception as e:
+        print(f"Error playing audio: {e}")
+        await ctx.send("There was an error playing the audio.")
+
     # Wait until audio is finished before disconnecting
     while vc.is_playing():
         await asyncio.sleep(1)
-    
+
     await vc.disconnect()
 
 @bot.command()
@@ -109,10 +111,5 @@ async def leave(ctx):
         await ctx.send("Disconnected from the voice channel.")
     else:
         await ctx.send("I'm not in a voice channel.")
-
-@bot.event
-async def on_voice_state_update(member, before, after):
-    if after.channel and not before.channel and after.channel in [vc.channel for vc in bot.voice_clients]:
-        await member.edit(mute=True)  # Mute anyone who joins
 
 bot.run(get_token())
