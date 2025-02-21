@@ -2,10 +2,10 @@ import discord
 from discord.ext import commands
 import os
 import random
+import json
 
 TOKEN_FILE = "token.txt"
 POINTS_FILE = "points.json"
-import json
 
 if not os.path.exists(TOKEN_FILE):
     with open(TOKEN_FILE, "w") as f:
@@ -18,10 +18,13 @@ with open(TOKEN_FILE, "r") as f:
 def load_points():
     if os.path.exists(POINTS_FILE):
         with open(POINTS_FILE, "r") as f:
-            return json.load(f)
+            points_data = json.load(f)
+            print(f"Loaded points: {points_data}")  # Debugging line to check loaded points
+            return points_data
     return {}
 
 def save_points(points):
+    print(f"Saving points: {points}")  # Debugging line to check what points are being saved
     with open(POINTS_FILE, "w") as f:
         json.dump(points, f)
 
@@ -58,10 +61,10 @@ def check_winner():
             if board[row][col] == "⚪":
                 continue
             symbol = board[row][col]
-            directions = [(0,1), (1,0), (1,1), (1,-1)]
+            directions = [(0, 1), (1, 0), (1, 1), (1, -1)]
             for dr, dc in directions:
                 try:
-                    if all(board[row + dr*i][col + dc*i] == symbol for i in range(4)):
+                    if all(board[row + dr * i][col + dc * i] == symbol for i in range(4)):
                         return symbol
                 except IndexError:
                     continue
@@ -139,12 +142,12 @@ async def reward_winner(ctx, winner):
         points = random.randint(100, 250)
     else:
         points = random.randint(250, 500)
-    
+
     if user_id not in player_points:
         player_points[user_id] = 0
     player_points[user_id] += points
     save_points(player_points)
-    
+
     await ctx.send(f"{winner.mention} ({player_symbols[winner]}) wins! 🎉 You won {points} points!")
 
 @bot.command()
