@@ -96,20 +96,21 @@ async def check_start(ctx):
         
         await ctx.send(f"Player 1 bet {p1_bet} and Player 2 bet {p2_bet}, total pot is {points_in_pot}!")
         
-        await ctx.send("Dealing cards...")
-        uno_hands["player1"] = [deck.pop() for _ in range(7)]
-        uno_hands["player2"] = [deck.pop() for _ in range(7)]
-        
-        await send_hands()
-        
-        current_card = deck.pop()
-        await ctx.send(f"The starting card is **{current_card}**!")
-        await ctx.send(f"{players['player1'].mention}, it's your turn! Say your card to play.")
+        await start_game(ctx)
+
+async def start_game(ctx):
+    global current_card
+    await ctx.send("Dealing cards...")
+    uno_hands["player1"] = [deck.pop() for _ in range(7)]
+    uno_hands["player2"] = [deck.pop() for _ in range(7)]
+    await send_hands()
+    current_card = deck.pop()
+    await ctx.send(f"The starting card is **{current_card}**!")
+    await ctx.send(f"{players['player1'].mention}, it's your turn! Say your card to play.")
 
 async def send_hands():
     embed1 = discord.Embed(title=f"Your Uno Hand", description="\n".join(uno_hands["player1"]), color=discord.Color.red())
     embed2 = discord.Embed(title=f"Your Uno Hand", description="\n".join(uno_hands["player2"]), color=discord.Color.blue())
-    
     await players["player1"].send(embed=embed1)
     await players["player2"].send(embed=embed2)
 
@@ -123,23 +124,26 @@ async def on_message(message):
         player = "player1" if message.author == players["player1"] else "player2"
         opponent = "player2" if player == "player1" else "player1"
         
-        if message.content in uno_hands[player]:
-            color, value = message.content.split(" ", 1)
-            current_color, current_value = current_card.split(" ", 1)
+        valid_moves = [card for card in uno_hands[player] if card.startswith(current_card.split()[0]) or card.endswith(current_card.split()[1])]
+        
+        if not valid_moves:
+            await message.channel.send("No valid moves! Restarting game with same bets...")
+            await start_game(message.channel)
+            return
+        
+        if message.content in valid_moves:
+            uno_hands[player].remove(message.content)
+            current_card = message.content
+            await message.channel.send(f"{message.author.mention} played **{current_card}**! Now it's {players[opponent].mention}'s turn.")
+            await send_hands()
             
-            if color == current_color or value == current_value:
-                uno_hands[player].remove(message.content)
-                current_card = message.content
-                await message.channel.send(f"{message.author.mention} played **{current_card}**! Now it's {players[opponent].mention}'s turn.")
-                await send_hands()
-                
-                if not uno_hands[player]:
-                    points[str(players[player].id)] += points_in_pot
-                    save_points()
-                    await message.channel.send(f"{players[player].mention} wins the game and takes home {points_in_pot} points!")
-                    return
-            else:
-                await message.channel.send("Invalid move! You must match the color or the number.")
+            if not uno_hands[player]:
+                points[str(players[player].id)] += points_in_pot
+                save_points()
+                await message.channel.send(f"{players[player].mention} wins the game and takes home {points_in_pot} points!")
+                return
+        else:
+            await message.channel.send("Invalid move! You must match the color or the number.")
         
     await bot.process_commands(message)
 
