@@ -22,7 +22,12 @@ if not os.path.exists("points.json"):
 with open("points.json", "r") as f:
     points = json.load(f)
 
-bot = commands.Bot(command_prefix="!")
+intents = discord.Intents.default()
+intents.messages = True
+intents.guilds = True
+intents.members = True
+
+bot = commands.Bot(command_prefix="!", intents=intents)
 players = {}
 uno_hands = {}
 deck = [f"{color} {value}" for color in ["Red", "Green", "Blue", "Yellow"] for value in range(1, 10)] * 2
