@@ -28,7 +28,7 @@ intents.guilds = True
 intents.members = True
 intents.message_content = True  # Ensure bot can read message content
 
-bot = commands.Bot(command_prefix="!", intents=intents)
+bot = commands.Bot(command_prefix=".", intents=intents)
 players = {}
 uno_hands = {}
 deck = [f"{color} {value}" for color in ["Red", "Green", "Blue", "Yellow"] for value in range(1, 10)] * 2
@@ -90,7 +90,7 @@ async def start_uno(ctx):
         
         await show_hands(ctx)
     else:
-        await ctx.send("Both players need to join first by using !one and !two.")
+        await ctx.send("Both players need to join first by using .one and .two.")
 
 async def show_hands(ctx):
     embed1 = discord.Embed(title=f"{players['player1'].name}'s Hand", description="\n".join(uno_hands["player1"]), color=discord.Color.red())
