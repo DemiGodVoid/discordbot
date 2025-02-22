@@ -60,7 +60,7 @@ async def on_message(message):
             return
         
         await message.channel.send("Are you Player 1 or Player 2? Type `.1` or `.2`.")
-        games[message.channel.id] = {"player1": None, "player2": None, "deck": create_deck(), "players": {}, "pile": []}
+        games[message.channel.id] = {"player1": None, "player2": None, "deck": create_deck(), "players": {}, "pile": [], "bet1": None, "bet2": None}
     
     elif content == ".1":
         game = games.get(message.channel.id)
@@ -84,7 +84,7 @@ async def on_message(message):
             game["player2"] = message.author.id
             await message.channel.send(f"{message.author.display_name} joined as Player 2! Both players are ready.")
             
-            # Ask Player 1 to enter their bet
+            # Ask Player 1 for their bet
             player1_balance = points.get(str(game['player1']), 0)
             await message.channel.send(f"{message.guild.get_member(game['player1']).mention}, enter your amount (50k or more). Your current balance: {player1_balance} points.")
         else:
