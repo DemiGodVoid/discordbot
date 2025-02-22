@@ -114,6 +114,7 @@ async def on_message(message):
      ------
      !connect4 - Play connect 4 and win!
      .start_uno - Play Uno and gamble!
+     .slap_jack - Say .slap_help for help!
      --------
      !roll amount - Gamble
      !spin - Get points!
