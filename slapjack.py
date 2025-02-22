@@ -84,7 +84,7 @@ async def on_message(message):
             game["player2"] = message.author.id
             await message.channel.send(f"{message.author.display_name} joined as Player 2! Both players are ready.")
             
-            # Ensure both players are set before prompting for points
+            # Now both players are set
             player1 = message.guild.get_member(game["player1"])
             player2 = message.guild.get_member(game["player2"])
             
