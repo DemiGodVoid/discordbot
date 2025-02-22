@@ -67,7 +67,9 @@ async def on_message(message):
             "players": {},
             "pile": [],
             "bet1": None,
-            "bet2": None
+            "bet2": None,
+            "current_turn": None,  # Add a turn tracker
+            "last_card": None  # Keep track of the last card played for slapping
         }
         
         await message.channel.send("Are you Player 1 or Player 2? Type `.1` or `.2`.")
@@ -102,8 +104,6 @@ async def on_message(message):
                 # Prompt Player 1 to enter points first
                 player1_balance = points.get(str(player1.id), 0)
                 await message.channel.send(f"{player1.mention}, enter your amount (50k or more). Your current balance: {player1_balance} points.")
-            else:
-                await message.channel.send("Error: One or both players are missing!")
         else:
             await message.channel.send("Player 2 has already joined!")
     
@@ -150,7 +150,10 @@ async def on_message(message):
         # Total the bets and announce the result
         total = game["bet1"] + game["bet2"]
         await message.channel.send(f"{game['player1'].mention} gave {game['bet1']} points, {game['player2'].mention} gave {game['bet2']} points. Total amount is {total} points! Let the game begin!")
-
+        
+        # Set the first turn to Player 1
+        game["current_turn"] = game["player1"]
+    
     elif content.startswith(".play"):
         game = games.get(message.channel.id)
         if not game:
@@ -161,13 +164,54 @@ async def on_message(message):
             await message.channel.send("You're not in the game! Join with `.1` or `.2`.")
             return
         
+        if game["current_turn"] != message.author:
+            await message.channel.send("It's not your turn yet! Wait for the other player to play.")
+            return
+        
         if not game["deck"]:
             await message.channel.send("The deck is empty! The game is over.")
             return
         
-        card = game["deck"].pop(0)
+        card = game["deck"].pop(0)  # Draw a card
         game["pile"].append(card)
+        game["last_card"] = card  # Save the last card played
+        
         await message.channel.send(f"{message.author.display_name} played {card}!")
+        
+        # Switch turns
+        game["current_turn"] = game["player2"] if game["current_turn"] == game["player1"] else game["player1"]
+        
+        # Show remaining cards in the deck
+        await message.channel.send(f"Cards remaining in deck: {len(game['deck'])}")
 
+    elif content.startswith(".slap"):
+        game = games.get(message.channel.id)
+        if not game:
+            await message.channel.send("No active game! Start one with `.slap_jack`.")
+            return
+        
+        if message.author not in [game["player1"], game["player2"]]:
+            await message.channel.send("You're not in the game! Join with `.1` or `.2`.")
+            return
+        
+        if game["last_card"] and game["last_card"].startswith("J"):
+            if message.author == game["current_turn"]:
+                await message.channel.send(f"{message.author.display_name} slapped the Jack and wins the round!")
+                
+                # Award the points to the winner
+                total_bet = game["bet1"] + game["bet2"]
+                if message.author == game["player1"]:
+                    points[str(game["player1"].id)] += total_bet
+                else:
+                    points[str(game["player2"].id)] += total_bet
+                save_points(points)
+                
+                # Reset the game
+                del games[message.channel.id]
+            else:
+                await message.channel.send("It's not your turn to slap the Jack!")
+        else:
+            await message.channel.send("No Jack to slap!")
+        
 token = get_token()
 client.run(token)
