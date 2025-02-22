@@ -2,7 +2,12 @@ This is a normal discord bot with a built-in gpt model to help it chat with disc
 -
 Model used: cohere 
 -
-NEW: FEB/21ST/2025
+NEW: FEB/22ND/2025
+-
+ADDED: UNO game & SlapJack game which requires points to play!
+-
+-
+OLD: FEB/21ST/2025
 -
 UPDATED: Point system (Now have to spend your points on certain commands in order to use them)
 -
