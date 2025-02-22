@@ -84,10 +84,12 @@ async def on_message(message):
             game["player2"] = message.author.id
             await message.channel.send(f"{message.author.display_name} joined as Player 2! Both players are ready.")
             
-            # Ensure the player IDs are available before prompting for points
+            # Ensure both players are set before prompting for points
             player1 = message.guild.get_member(game["player1"])
             player2 = message.guild.get_member(game["player2"])
+            
             if player1 and player2:
+                # Prompt Player 1 to enter points first
                 player1_balance = points.get(str(game['player1']), 0)
                 await message.channel.send(f"{player1.mention}, enter your amount (50k or more). Your current balance: {player1_balance} points.")
             else:
