@@ -52,19 +52,22 @@ async def start_uno(ctx):
     global game_mode
     players.clear()
     uno_hands.clear()
+    game_mode = None
     await ctx.send("Choose a game mode: `.2 players` or `.4 players`.")
 
 @bot.command()
 async def two_players(ctx):
     global game_mode
-    game_mode = 2
-    await ctx.send("Game mode set to 2 players! Use `.one` and `.two` to join.")
+    if game_mode is None:
+        game_mode = 2
+        await ctx.send("Game mode set to 2 players! Use `.one` and `.two` to join.")
 
 @bot.command()
 async def four_players(ctx):
     global game_mode
-    game_mode = 4
-    await ctx.send("Game mode set to 4 players! Use `.one`, `.two`, `.three`, and `.four` to join.")
+    if game_mode is None:
+        game_mode = 4
+        await ctx.send("Game mode set to 4 players! Use `.one`, `.two`, `.three`, and `.four` to join.")
 
 @bot.command()
 async def one(ctx):
