@@ -58,33 +58,33 @@ async def on_message(message):
             await message.channel.send("A game is already in progress!")
             return
         
-        await message.channel.send("Are you Player 1 or Player 2? Type `1` or `2`.")
-        def check(m):
-            return m.author == message.author and m.content in ["1", "2"]
-        
-        try:
-            msg = await client.wait_for("message", check=check, timeout=30)
-            player1_id = message.author.id if msg.content == "1" else None
-            player2_id = message.author.id if msg.content == "2" else None
-            games[message.channel.id] = {"player1": player1_id, "player2": player2_id, "deck": create_deck(), "players": {}, "pile": []}
-            await message.channel.send("Waiting for the second player to join... Type `.join`.")
-        except asyncio.TimeoutError:
-            await message.channel.send("You took too long to respond!")
-            return
+        await message.channel.send("Are you Player 1 or Player 2? Type `.1` or `.2`.")
+        games[message.channel.id] = {"player1": None, "player2": None, "deck": create_deck(), "players": {}, "pile": []}
     
-    elif content.startswith(".join"):
+    elif content == ".1":
+        game = games.get(message.channel.id)
+        if not game:
+            await message.channel.send("No active game! Start one with `.slap_jack`.")
+            return
+
+        if game["player1"] is None:
+            game["player1"] = message.author.id
+            await message.channel.send(f"{message.author.display_name} joined as Player 1! Now, Player 2, type `.2` to join.")
+        else:
+            await message.channel.send("Player 1 has already joined!")
+    
+    elif content == ".2":
         game = games.get(message.channel.id)
         if not game:
             await message.channel.send("No active game! Start one with `.slap_jack`.")
             return
         
-        if not game["player1"]:
-            game["player1"] = message.author.id
-        elif not game["player2"]:
+        if game["player2"] is None:
             game["player2"] = message.author.id
+            await message.channel.send(f"{message.author.display_name} joined as Player 2! Both players are ready.")
             await message.channel.send(f"{message.guild.get_member(game['player1']).mention}, enter your amount (50k or more).")
         else:
-            await message.channel.send("The game already has two players!")
+            await message.channel.send("Player 2 has already joined!")
     
     elif message.author.id in [g.get("player1"), g.get("player2")] and content.isdigit():
         game = games.get(message.channel.id)
@@ -120,7 +120,7 @@ async def on_message(message):
             return
         
         if message.author.id not in game["players"]:
-            await message.channel.send("You're not in the game! Join with `.join`.")
+            await message.channel.send("You're not in the game! Join with `.1` or `.2`.")
             return
         
         if not game["deck"]:
