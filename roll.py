@@ -44,18 +44,16 @@ async def roll(ctx, amount: int):
         await ctx.send(f"You don't have enough points! You currently have {current_points} points.")
         return
 
-    # Roll and determine win/loss
-    points_won_lost = random.randint(1, 1000)
-    result = "won" if random.choice([True, False]) else "lost"
-    
-    if result == "won":
-        # User wins
-        user_points[user_id] = current_points + amount + points_won_lost
-        await ctx.send(f"You gambled {amount} points and {result}! You gained {points_won_lost} points. Total: {user_points[user_id]} points.")
+    # 50/50 win/loss
+    if random.choice([True, False]):
+        # User wins: double the bet
+        winnings = amount * 2
+        user_points[user_id] = current_points + winnings
+        await ctx.send(f"You gambled {amount} points and **won**! You gained {winnings} points. Total: {user_points[user_id]} points.")
     else:
-        # User loses
+        # User loses: lose the bet
         user_points[user_id] = current_points - amount
-        await ctx.send(f"You gambled {amount} points and {result}! You lost {amount} points. Total: {user_points[user_id]} points.")
+        await ctx.send(f"You gambled {amount} points and **lost**! You lost {amount} points. Total: {user_points[user_id]} points.")
     
     # Save updated points
     save_points(user_points)
