@@ -50,10 +50,10 @@ async def on_message(message):
         return
     
     content = message.content.strip().lower()
-    if content.startswith("!slap_help"):
-        await message.channel.send("Slap Jack Instructions: \n- Use `!slap_jack` to start a game.\n- Players take turns playing cards using `!play`.\n- If a Jack is played, slap it with `!slap`.\n- Last player with cards wins!")
+    if content.startswith(".slap_help"):
+        await message.channel.send("Slap Jack Instructions: \n- Use `.slap_jack` to start a game.\n- Players take turns playing cards using `.play`.\n- If a Jack is played, slap it with `.slap`.\n- Last player with cards wins!")
     
-    elif content.startswith("!slap_jack"):
+    elif content.startswith(".slap_jack"):
         if message.channel.id in games:
             await message.channel.send("A game is already in progress!")
             return
@@ -67,15 +67,15 @@ async def on_message(message):
             player1_id = message.author.id if msg.content == "1" else None
             player2_id = message.author.id if msg.content == "2" else None
             games[message.channel.id] = {"player1": player1_id, "player2": player2_id, "deck": create_deck(), "players": {}, "pile": []}
-            await message.channel.send("Waiting for the second player to join... Type `!join`.")
+            await message.channel.send("Waiting for the second player to join... Type `.join`.")
         except asyncio.TimeoutError:
             await message.channel.send("You took too long to respond!")
             return
     
-    elif content.startswith("!join"):
+    elif content.startswith(".join"):
         game = games.get(message.channel.id)
         if not game:
-            await message.channel.send("No active game! Start one with `!slap_jack`.")
+            await message.channel.send("No active game! Start one with `.slap_jack`.")
             return
         
         if not game["player1"]:
@@ -113,14 +113,14 @@ async def on_message(message):
             
             await message.channel.send(f"{message.guild.get_member(game['player1']).mention} gave {game['bet1']} points, {message.guild.get_member(game['player2']).mention} gave {game['bet2']} points. Total amount is {total} points! Let the game begin!")
     
-    elif content.startswith("!play"):
+    elif content.startswith(".play"):
         game = games.get(message.channel.id)
         if not game:
-            await message.channel.send("No active game! Start one with `!slap_jack`.")
+            await message.channel.send("No active game! Start one with `.slap_jack`.")
             return
         
         if message.author.id not in game["players"]:
-            await message.channel.send("You're not in the game! Join with `!join`.")
+            await message.channel.send("You're not in the game! Join with `.join`.")
             return
         
         if not game["deck"]:
