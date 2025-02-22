@@ -46,6 +46,19 @@ def update_user_points(user_id, new_points):
     with open("points.json", "w") as file:
         json.dump(points_data, file, indent=4)
 
+# Function to update total taken points in taken_points.json
+def update_taken_points(used_points):
+    if os.path.exists("taken_points.json"):
+        with open("taken_points.json", "r") as file:
+            taken_data = json.load(file)
+    else:
+        taken_data = {"total_taken_points": 0}
+
+    taken_data["total_taken_points"] += used_points
+
+    with open("taken_points.json", "w") as file:
+        json.dump(taken_data, file, indent=4)
+
 # Get credentials
 TOKEN = get_token()
 YOUTUBE_API_KEY = get_youtube_api_key()
@@ -111,6 +124,9 @@ async def on_message(message):
         # Deduct 1000 points from the user
         update_user_points(user_id, points - 1000)
         await message.channel.send("1000 points taken successfully")
+
+        # Update total taken points
+        update_taken_points(1000)
 
         prompt = message.content[len('!image '):].strip()
         if prompt:
