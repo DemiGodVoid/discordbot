@@ -67,7 +67,27 @@ async def on_message(message):
         return
     
     if message.content == '!commands2':
-        await message.channel.send('Commands:\n\n!youtube title - name\n\n!chat prompt - Chat with the bots gpt side!(Takes 500 points a chat)\n\n!image prompt(This takes 1000 points from you, play some games to gain points!)\n\n!games - Earn/Lose points!')
+        embed = discord.Embed(title="Commands", description="List of available commands", color=discord.Color.blue())
+        embed.add_field(name="!youtube title - name", value="Search for a YouTube video by title and name.", inline=False)
+        embed.add_field(name="!chat prompt", value="Chat with the bot's GPT side! (Takes 500 points per chat)", inline=False)
+        embed.add_field(name="!image prompt", value="Generate an image based on a prompt! (1000 points per image)", inline=False)
+        embed.add_field(name="!games", value="Access a list of games and point-based activities!", inline=False)
+        await message.channel.send(embed=embed)
+
+    if message.content == '!games':
+        embed = discord.Embed(title="Bots Games", description="List of available games", color=discord.Color.green())
+        embed.add_field(name="!connect4", value="Play connect 4 and win!", inline=False)
+        embed.add_field(name=".start_uno", value="Play Uno and gamble!", inline=False)
+        embed.add_field(name=".slap_jack", value="Say .slap_help for help!", inline=False)
+        embed.add_field(name="!roll amount", value="Gamble your points.", inline=False)
+        embed.add_field(name="!spin", value="Spin and get points!", inline=False)
+        embed.add_field(name="!pay @user123 amount", value="Give your points to others!", inline=False)
+        embed.add_field(name="!bal", value="Check your points.", inline=False)
+        embed.add_field(name="!points", value="See everyone's points.", inline=False)
+        embed.add_field(name="!giveaway", value="Give away all the points you've taken.", inline=False)
+        embed.add_field(name="!taken", value="See the total of taken points people spent.", inline=False)
+        embed.add_field(name="----", value="You can earn and spend points in these games!", inline=False)
+        await message.channel.send(embed=embed)
 
     if message.content.startswith('!youtube '):
         query = message.content[len('!youtube '):].strip()
@@ -107,27 +127,6 @@ async def on_message(message):
                         await message.channel.send("Failed to generate image.")
         else:
             await message.channel.send("Please provide a prompt for the image. Example: !image futuristic city with flying cars")
-            
-    if message.content == '!games':
-        games_message = """
-     Bots Games
-     ------
-     !connect4 - Play connect 4 and win!
-     .start_uno - Play Uno and gamble!
-     .slap_jack - Say .slap_help for help!
-     --------
-     !roll amount - Gamble
-     !spin - Get points!
-     !pay @user123 amount - Give your points to others!
-     !bal - Check Points!
-     !points - See Everyones points!
-     !giveaway - Give away all the taken points!
-     !taken - See the total of taken points people spent!
-     ------
-     You can earn points and spend it in other games!
-        """
-        await message.channel.send(games_message)
-
 
 async def search_youtube(query):
     async with aiohttp.ClientSession() as session:
