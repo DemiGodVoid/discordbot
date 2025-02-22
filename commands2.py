@@ -97,7 +97,7 @@ async def on_message(message):
         embed.add_field(name="!pay @user123 amount", value="Give your points to others!", inline=False)
         embed.add_field(name="!bal", value="Check your points.", inline=False)
         embed.add_field(name="!points", value="See everyone's points.", inline=False)
-        embed.add_field(name="!giveaway", value="Give away all the points you've taken.", inline=False)
+        embed.add_field(name="!giveaway", value="Give away points all players have spent to a random player.", inline=False)
         embed.add_field(name="!taken", value="See the total of taken points people spent.", inline=False)
         embed.add_field(name="----", value="You can earn and spend points in these games!", inline=False)
         await message.channel.send(embed=embed)
