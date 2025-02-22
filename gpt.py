@@ -3,6 +3,7 @@ import asyncio
 import os
 import cohere
 import json
+import random
 
 def load_token():
     if os.path.exists("token.txt"):
@@ -47,6 +48,19 @@ def save_points(points_data):
     with open("points.json", "w") as file:
         json.dump(points_data, file)
 
+def load_taken_points():
+    """Load total taken points from taken_points.json."""
+    if os.path.exists("taken_points.json"):
+        with open("taken_points.json", "r") as file:
+            return json.load(file)
+    else:
+        return {"total_taken_points": 0}
+
+def save_taken_points(taken_points_data):
+    """Save updated taken points to taken_points.json."""
+    with open("taken_points.json", "w") as file:
+        json.dump(taken_points_data, file)
+
 cohere_api_key = load_cohere_api_key()
 co = cohere.Client(cohere_api_key)
 
@@ -67,6 +81,7 @@ class MyClient(discord.Client):
             user_message = message.content[6:].strip()
             user_id = message.author.id  # Unique user ID
             points_data = load_points()
+            taken_points_data = load_taken_points()
 
             # Debugging: Print current points for user
             print(f"User {user_id} has {points_data.get(str(user_id), 0)} points.")  # Debugging line
@@ -76,6 +91,10 @@ class MyClient(discord.Client):
                 # Deduct 500 points
                 points_data[str(user_id)] -= 500
                 save_points(points_data)
+
+                # Add deducted points to the total taken points
+                taken_points_data["total_taken_points"] += 500
+                save_taken_points(taken_points_data)
 
                 await message.channel.send("500 points successfully taken")
 
@@ -87,6 +106,41 @@ class MyClient(discord.Client):
                         await message.channel.send(f"Error occurred: {str(e)}")
             else:
                 await message.channel.send("Not enough points, please play one of the games using !games and come back when you have 500+ points")
+
+        elif message.content.lower().startswith("!taken"):
+            taken_points_data = load_taken_points()
+            total_taken_points = taken_points_data["total_taken_points"]
+            await message.channel.send(f"Total points taken from users: {total_taken_points}")
+
+        elif message.content.lower().startswith("!giveaway"):
+            taken_points_data = load_taken_points()
+            total_taken_points = taken_points_data["total_taken_points"]
+
+            if total_taken_points == 0:
+                await message.channel.send("No points have been taken yet.")
+                return
+
+            # Get a list of all users with points
+            points_data = load_points()
+            eligible_users = [user_id for user_id, points in points_data.items() if points >= 500]
+
+            if not eligible_users:
+                await message.channel.send("No users with enough points for a giveaway.")
+                return
+
+            # Pick a random user
+            winner_id = random.choice(eligible_users)
+
+            # Add total taken points to the winner's points
+            points_data[str(winner_id)] += total_taken_points
+            save_points(points_data)
+
+            # Reset the total taken points
+            taken_points_data["total_taken_points"] = 0
+            save_taken_points(taken_points_data)
+
+            winner = await self.fetch_user(winner_id)
+            await message.channel.send(f"🎉 Congratulations {winner.mention}, you have won {total_taken_points} points in the giveaway! 🎉")
 
     def generate_response(self, user_id, user_message, message):
         """Generates a response while maintaining conversation history and mentioning users"""
