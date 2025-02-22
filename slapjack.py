@@ -79,7 +79,7 @@ async def on_message(message):
             return
 
         if game["player1"] is None:
-            game["player1"] = message.author.id
+            game["player1"] = message.author
             await message.channel.send(f"{message.author.display_name} joined as Player 1! Now, Player 2, type `.2` to join.")
         else:
             await message.channel.send("Player 1 has already joined!")
@@ -91,23 +91,23 @@ async def on_message(message):
             return
         
         if game["player2"] is None:
-            game["player2"] = message.author.id
+            game["player2"] = message.author
             await message.channel.send(f"{message.author.display_name} joined as Player 2! Both players are ready.")
             
             # Now both players are set
-            player1 = message.guild.get_member(game["player1"])
-            player2 = message.guild.get_member(game["player2"])
+            player1 = game["player1"]
+            player2 = game["player2"]
             
             if player1 and player2:
                 # Prompt Player 1 to enter points first
-                player1_balance = points.get(str(game['player1']), 0)
+                player1_balance = points.get(str(player1.id), 0)
                 await message.channel.send(f"{player1.mention}, enter your amount (50k or more). Your current balance: {player1_balance} points.")
             else:
                 await message.channel.send("Error: One or both players are missing!")
         else:
             await message.channel.send("Player 2 has already joined!")
     
-    elif message.author.id == games[message.channel.id]["player1"] and content.isdigit():
+    elif message.author == games[message.channel.id]["player1"] and content.isdigit():
         game = games.get(message.channel.id)
         amount = int(content)
         
@@ -116,20 +116,20 @@ async def on_message(message):
             return
         
         # Deduct the points for Player 1
-        player1_balance = points.get(str(game["player1"]), 0)
+        player1_balance = points.get(str(game["player1"].id), 0)
         if player1_balance < amount:
             await message.channel.send(f"You don't have enough points! You have {player1_balance} points.")
             return
         
-        points[str(game["player1"])] -= amount
+        points[str(game["player1"].id)] -= amount
         save_points(points)
         game["bet1"] = amount
         
-        player2 = message.guild.get_member(game["player2"])
+        player2 = game["player2"]
         if player2:
-            await message.channel.send(f"{player2.mention}, enter your amount (50k or more). Your current balance: {points.get(str(game['player2']), 0)} points.")
+            await message.channel.send(f"{player2.mention}, enter your amount (50k or more). Your current balance: {points.get(str(player2.id), 0)} points.")
     
-    elif message.author.id == games[message.channel.id]["player2"] and content.isdigit():
+    elif message.author == games[message.channel.id]["player2"] and content.isdigit():
         game = games.get(message.channel.id)
         amount = int(content)
         
@@ -138,18 +138,18 @@ async def on_message(message):
             return
         
         # Deduct the points for Player 2
-        player2_balance = points.get(str(game["player2"]), 0)
+        player2_balance = points.get(str(game["player2"].id), 0)
         if player2_balance < amount:
             await message.channel.send(f"You don't have enough points! You have {player2_balance} points.")
             return
         
-        points[str(game["player2"])] -= amount
+        points[str(game["player2"].id)] -= amount
         save_points(points)
         game["bet2"] = amount
         
         # Total the bets and announce the result
         total = game["bet1"] + game["bet2"]
-        await message.channel.send(f"{message.guild.get_member(game['player1']).mention} gave {game['bet1']} points, {message.guild.get_member(game['player2']).mention} gave {game['bet2']} points. Total amount is {total} points! Let the game begin!")
+        await message.channel.send(f"{game['player1'].mention} gave {game['bet1']} points, {game['player2'].mention} gave {game['bet2']} points. Total amount is {total} points! Let the game begin!")
 
     elif content.startswith(".play"):
         game = games.get(message.channel.id)
@@ -157,7 +157,7 @@ async def on_message(message):
             await message.channel.send("No active game! Start one with `.slap_jack`.")
             return
         
-        if message.author.id not in game["players"]:
+        if message.author not in [game["player1"], game["player2"]]:
             await message.channel.send("You're not in the game! Join with `.1` or `.2`.")
             return
         
