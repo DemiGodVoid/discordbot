@@ -30,9 +30,9 @@ intents = discord.Intents.default()
 intents.messages = True
 intents.guilds = True
 intents.members = True
-intents.message_content = True  # Ensure bot can read message content
+intents.message_content = True
 
-bot = commands.Bot(command_prefix=".", intents=intents)
+bot = commands.Bot(command_prefix=".", intents=intents, help_command=None)
 players = {}
 uno_hands = {}
 deck = [f"{color} {value}" for color in ["Red", "Green", "Blue", "Yellow"] for value in range(1, 10)] * 2
@@ -116,35 +116,33 @@ async def send_hands():
 
 @bot.event
 async def on_message(message):
-    global current_card, points_in_pot
-    if message.author == bot.user:
+    global current_card
+    if message.author == bot.user or not message.content.startswith("."):
         return
     
+    content = message.content[1:].strip()
     if message.author in players.values():
         player = "player1" if message.author == players["player1"] else "player2"
         opponent = "player2" if player == "player1" else "player1"
-        
         valid_moves = [card for card in uno_hands[player] if card.startswith(current_card.split()[0]) or card.endswith(current_card.split()[1])]
         
-        if not valid_moves:
-            await message.channel.send("No valid moves! Restarting game with same bets...")
-            await start_game(message.channel)
-            return
-        
-        if message.content in valid_moves:
-            uno_hands[player].remove(message.content)
-            current_card = message.content
-            await message.channel.send(f"{message.author.mention} played **{current_card}**! Now it's {players[opponent].mention}'s turn.")
-            await send_hands()
-            
-            if not uno_hands[player]:
-                points[str(players[player].id)] += points_in_pot
-                save_points()
-                await message.channel.send(f"{players[player].mention} wins the game and takes home {points_in_pot} points!")
-                return
+        if content in uno_hands[player]:
+            if content in valid_moves:
+                uno_hands[player].remove(content)
+                current_card = content
+                await message.channel.send(f"{message.author.mention} played **{current_card}**! Now it's {players[opponent].mention}'s turn.")
+                await send_hands()
+                
+                if not uno_hands[player]:
+                    points[str(players[player].id)] += points_in_pot
+                    save_points()
+                    await message.channel.send(f"{players[player].mention} wins the game and takes home {points_in_pot} points!")
+                    return
+            else:
+                await message.channel.send("Invalid move! You must match the color or the number.")
         else:
-            await message.channel.send("Invalid move! You must match the color or the number.")
-        
+            await message.channel.send("You don't have that card in your hand!")
+    
     await bot.process_commands(message)
 
 bot.run(token)
