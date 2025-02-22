@@ -121,6 +121,8 @@ async def on_message(message):
      !pay @user123 amount - Give your points to others!
      !bal - Check Points!
      !points - See Everyones points!
+     !giveaway - Give away all the taken points!
+     !taken - See the total of taken points people spent!
      ------
      You can earn points and spend it in other games!
         """
