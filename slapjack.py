@@ -84,13 +84,18 @@ async def on_message(message):
             game["player2"] = message.author.id
             await message.channel.send(f"{message.author.display_name} joined as Player 2! Both players are ready.")
             
-            # Ask Player 1 for their bet
-            player1_balance = points.get(str(game['player1']), 0)
-            await message.channel.send(f"{message.guild.get_member(game['player1']).mention}, enter your amount (50k or more). Your current balance: {player1_balance} points.")
+            # Ensure the player IDs are available before prompting for points
+            player1 = message.guild.get_member(game["player1"])
+            player2 = message.guild.get_member(game["player2"])
+            if player1 and player2:
+                player1_balance = points.get(str(game['player1']), 0)
+                await message.channel.send(f"{player1.mention}, enter your amount (50k or more). Your current balance: {player1_balance} points.")
+            else:
+                await message.channel.send("Error: One or both players are missing!")
         else:
             await message.channel.send("Player 2 has already joined!")
     
-    elif message.author.id == game["player1"] and content.isdigit():
+    elif message.author.id == games[message.channel.id]["player1"] and content.isdigit():
         game = games.get(message.channel.id)
         amount = int(content)
         
@@ -107,9 +112,12 @@ async def on_message(message):
         points[str(game["player1"])] -= amount
         save_points(points)
         game["bet1"] = amount
-        await message.channel.send(f"{message.guild.get_member(game['player2']).mention}, enter your amount (50k or more). Your current balance: {points.get(str(game['player2']), 0)} points.")
+        
+        player2 = message.guild.get_member(game["player2"])
+        if player2:
+            await message.channel.send(f"{player2.mention}, enter your amount (50k or more). Your current balance: {points.get(str(game['player2']), 0)} points.")
     
-    elif message.author.id == game["player2"] and content.isdigit():
+    elif message.author.id == games[message.channel.id]["player2"] and content.isdigit():
         game = games.get(message.channel.id)
         amount = int(content)
         
