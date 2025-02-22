@@ -194,22 +194,19 @@ async def on_message(message):
             await message.channel.send("You're not in the game! Join with `.1` or `.2`.")
             return
         
-        if game["last_card"] and game["last_card"].startswith("J"):
-            if message.author == game["current_turn"]:
-                await message.channel.send(f"{message.author.display_name} slapped the Jack and wins the round!")
-                
-                # Award the points to the winner
-                total_bet = game["bet1"] + game["bet2"]
-                if message.author == game["player1"]:
-                    points[str(game["player1"].id)] += total_bet
-                else:
-                    points[str(game["player2"].id)] += total_bet
-                save_points(points)
-                
-                # Reset the game
-                del games[message.channel.id]
+        if game["last_card"] and game["last_card"].startswith("J"):  # Only if the last card was a Jack
+            await message.channel.send(f"{message.author.display_name} slapped the Jack and wins the round!")
+            
+            # Award the points to the winner
+            total_bet = game["bet1"] + game["bet2"]
+            if message.author == game["player1"]:
+                points[str(game["player1"].id)] += total_bet
             else:
-                await message.channel.send("It's not your turn to slap the Jack!")
+                points[str(game["player2"].id)] += total_bet
+            save_points(points)
+            
+            # Reset the game
+            del games[message.channel.id]
         else:
             await message.channel.send("No Jack to slap!")
         
