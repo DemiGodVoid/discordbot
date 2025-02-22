@@ -33,14 +33,18 @@ players = {}
 uno_hands = {}
 deck = [f"{color} {value}" for color in ["Red", "Green", "Blue", "Yellow"] for value in range(1, 10)] * 2
 random.shuffle(deck)
-
-def save_points():
-    with open("points.json", "w") as f:
-        json.dump(points, f)
+current_card = None
 
 @bot.event
 async def on_ready():
     print(f"Logged in as {bot.user}")
+
+@bot.command()
+async def start_uno(ctx):
+    global current_card
+    players.clear()
+    uno_hands.clear()
+    await ctx.send("Both players need to join! Use .one and .two to join the game.")
 
 @bot.command()
 async def one(ctx):
@@ -49,6 +53,7 @@ async def one(ctx):
         await ctx.send("Player 1 has joined!")
     else:
         await ctx.send("Player 1 slot is taken!")
+    await check_start(ctx)
 
 @bot.command()
 async def two(ctx):
@@ -57,47 +62,50 @@ async def two(ctx):
         await ctx.send("Player 2 has joined!")
     else:
         await ctx.send("Player 2 slot is taken!")
+    await check_start(ctx)
 
-@bot.command()
-async def start_uno(ctx):
+async def check_start(ctx):
+    global current_card
     if "player1" in players and "player2" in players:
-        await ctx.send("Great! Before we start, let's throw in a few points.")
-        await ctx.send(f"{players['player1'].mention}, enter an amount of points:")
-
-        def check_p1(m):
-            return m.author == players["player1"] and m.content.isdigit()
-        
-        msg1 = await bot.wait_for("message", check=check_p1)
-        p1_points = int(msg1.content)
-        points[str(players["player1"].id)] = points.get(str(players["player1"].id), 100) - p1_points
-        
-        await ctx.send(f"{players['player2'].mention}, enter an amount of points:")
-        
-        def check_p2(m):
-            return m.author == players["player2"] and m.content.isdigit()
-        
-        msg2 = await bot.wait_for("message", check=check_p2)
-        p2_points = int(msg2.content)
-        points[str(players["player2"].id)] = points.get(str(players["player2"].id), 100) - p2_points
-        
-        total = p1_points + p2_points
-        save_points()
-        
-        await ctx.send(f"Okay, player 1 put in {p1_points} and player 2 put in {p2_points}, which adds up to {total}! Whoever wins, takes this home!")
-        
+        await ctx.send("Both players are ready! Dealing cards...")
         uno_hands["player1"] = [deck.pop() for _ in range(7)]
         uno_hands["player2"] = [deck.pop() for _ in range(7)]
         
-        await show_hands(ctx)
-    else:
-        await ctx.send("Both players need to join first by using .one and .two.")
+        await send_hands()
+        
+        current_card = deck.pop()
+        await ctx.send(f"The starting card is **{current_card}**!")
+        await ctx.send(f"{players['player1'].mention}, it's your turn! Say your card to play.")
 
-async def show_hands(ctx):
-    embed1 = discord.Embed(title=f"{players['player1'].name}'s Hand", description="\n".join(uno_hands["player1"]), color=discord.Color.red())
-    embed2 = discord.Embed(title=f"{players['player2'].name}'s Hand", description="\n".join(uno_hands["player2"]), color=discord.Color.blue())
+async def send_hands():
+    embed1 = discord.Embed(title=f"Your Uno Hand", description="\n".join(uno_hands["player1"]), color=discord.Color.red())
+    embed2 = discord.Embed(title=f"Your Uno Hand", description="\n".join(uno_hands["player2"]), color=discord.Color.blue())
     
     await players["player1"].send(embed=embed1)
     await players["player2"].send(embed=embed2)
-    await ctx.send("Both players have received their starting hands! Let the game begin!")
+
+@bot.event
+async def on_message(message):
+    global current_card
+    if message.author == bot.user:
+        return
+    
+    if message.author in players.values():
+        player = "player1" if message.author == players["player1"] else "player2"
+        opponent = "player2" if player == "player1" else "player1"
+        
+        if message.content in uno_hands[player]:
+            color, value = message.content.split(" ", 1)
+            current_color, current_value = current_card.split(" ", 1)
+            
+            if color == current_color or value == current_value:
+                uno_hands[player].remove(message.content)
+                current_card = message.content
+                await message.channel.send(f"{message.author.mention} played **{current_card}**! Now it's {players[opponent].mention}'s turn.")
+                await send_hands()
+            else:
+                await message.channel.send("Invalid move! You must match the color or the number.")
+        
+    await bot.process_commands(message)
 
 bot.run(token)
