@@ -59,8 +59,18 @@ async def on_message(message):
             await message.channel.send("A game is already in progress!")
             return
         
+        # Initialize a new game with both players set to None
+        games[message.channel.id] = {
+            "player1": None,
+            "player2": None,
+            "deck": create_deck(),
+            "players": {},
+            "pile": [],
+            "bet1": None,
+            "bet2": None
+        }
+        
         await message.channel.send("Are you Player 1 or Player 2? Type `.1` or `.2`.")
-        games[message.channel.id] = {"player1": None, "player2": None, "deck": create_deck(), "players": {}, "pile": [], "bet1": None, "bet2": None}
     
     elif content == ".1":
         game = games.get(message.channel.id)
