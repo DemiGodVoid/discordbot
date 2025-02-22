@@ -91,10 +91,15 @@ async def pay(ctx, member: discord.Member, amount: int):
     recipient_id = str(member.id)
     user_points = load_points()
 
+    # Prevent negative or zero transactions
+    if amount <= 0:
+        await ctx.send("Invalid amount! You must send a positive number of points.")
+        return
+
     # Check if the user has enough points
     current_points = user_points.get(user_id, 0)
     if amount > current_points:
-        await ctx.send(f"You don't have enough points! You currently have {current_points} points.")
+        await ctx.send("Not enough points!")
         return
 
     # Transfer points
