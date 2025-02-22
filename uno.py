@@ -111,11 +111,22 @@ async def send_hands():
 
 @bot.event
 async def on_message(message):
-    global current_card, turn_index
-    if message.author == bot.user or not message.content.startswith("."):
+    global current_card, turn_index, game_mode
+    if message.author == bot.user:
         return
     
-    content = message.content[1:].strip()
+    content = message.content.strip()
+    if content == ".2 players":
+        await two_players(await bot.get_context(message))
+        return
+    elif content == ".4 players":
+        await four_players(await bot.get_context(message))
+        return
+    
+    if message.content.startswith("."):
+        await bot.process_commands(message)
+        return
+    
     if message.author in players:
         player = players[turn_index]
         if message.author != player:
@@ -145,7 +156,5 @@ async def on_message(message):
             await message.channel.send(f"{players[turn_index].mention}, it's your turn!")
         else:
             await message.channel.send("You don't have that card in your hand!")
-    
-    await bot.process_commands(message)
 
 bot.run(token)
