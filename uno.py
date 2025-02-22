@@ -22,6 +22,10 @@ if not os.path.exists("points.json"):
 with open("points.json", "r") as f:
     points = json.load(f)
 
+def save_points():
+    with open("points.json", "w") as f:
+        json.dump(points, f)
+
 intents = discord.Intents.default()
 intents.messages = True
 intents.guilds = True
@@ -34,6 +38,7 @@ uno_hands = {}
 deck = [f"{color} {value}" for color in ["Red", "Green", "Blue", "Yellow"] for value in range(1, 10)] * 2
 random.shuffle(deck)
 current_card = None
+points_in_pot = 0
 
 @bot.event
 async def on_ready():
@@ -41,9 +46,10 @@ async def on_ready():
 
 @bot.command()
 async def start_uno(ctx):
-    global current_card
+    global current_card, points_in_pot
     players.clear()
     uno_hands.clear()
+    points_in_pot = 0
     await ctx.send("Both players need to join! Use .one and .two to join the game.")
 
 @bot.command()
@@ -65,9 +71,32 @@ async def two(ctx):
     await check_start(ctx)
 
 async def check_start(ctx):
-    global current_card
+    global current_card, points_in_pot
     if "player1" in players and "player2" in players:
-        await ctx.send("Both players are ready! Dealing cards...")
+        await ctx.send("Both players are ready! Enter your bet amount.")
+        
+        def check_p1(m):
+            return m.author == players["player1"] and m.content.isdigit()
+        
+        await ctx.send(f"{players['player1'].mention}, enter your bet:")
+        msg1 = await bot.wait_for("message", check=check_p1)
+        p1_bet = int(msg1.content)
+        points[str(players["player1"].id)] = points.get(str(players["player1"].id), 100) - p1_bet
+        
+        def check_p2(m):
+            return m.author == players["player2"] and m.content.isdigit()
+        
+        await ctx.send(f"{players['player2'].mention}, enter your bet:")
+        msg2 = await bot.wait_for("message", check=check_p2)
+        p2_bet = int(msg2.content)
+        points[str(players["player2"].id)] = points.get(str(players["player2"].id), 100) - p2_bet
+        
+        points_in_pot = p1_bet + p2_bet
+        save_points()
+        
+        await ctx.send(f"Player 1 bet {p1_bet} and Player 2 bet {p2_bet}, total pot is {points_in_pot}!")
+        
+        await ctx.send("Dealing cards...")
         uno_hands["player1"] = [deck.pop() for _ in range(7)]
         uno_hands["player2"] = [deck.pop() for _ in range(7)]
         
@@ -86,7 +115,7 @@ async def send_hands():
 
 @bot.event
 async def on_message(message):
-    global current_card
+    global current_card, points_in_pot
     if message.author == bot.user:
         return
     
@@ -103,6 +132,12 @@ async def on_message(message):
                 current_card = message.content
                 await message.channel.send(f"{message.author.mention} played **{current_card}**! Now it's {players[opponent].mention}'s turn.")
                 await send_hands()
+                
+                if not uno_hands[player]:
+                    points[str(players[player].id)] += points_in_pot
+                    save_points()
+                    await message.channel.send(f"{players[player].mention} wins the game and takes home {points_in_pot} points!")
+                    return
             else:
                 await message.channel.send("Invalid move! You must match the color or the number.")
         
