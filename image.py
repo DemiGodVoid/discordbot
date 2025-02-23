@@ -2,6 +2,7 @@ import discord
 import json
 import os
 import aiohttp
+import asyncio
 
 # Set up bot intents
 intents = discord.Intents.default()
@@ -68,30 +69,25 @@ async def generate_image(prompt, retries=3):
             
         return None
 
-# Bot ready event
 @client.event
 async def on_ready():
-    print(f'✅ Logged in as {client.user}')
+    print(f'Logged in as {client.user}')
 
-# Message command handling
 @client.event
 async def on_message(message):
     if message.author == client.user:
         return
-    if message.content.startswith('!image '):
-        user_id = str(message.author.id)
-        current_points = get_user_points(user_id)
-        if current_points >= 1000:
-            prompt = message.content[len('!image '):].strip()
-            await message.channel.send("⏳ Generating your image, please wait...")
-            image_url = await generate_image(prompt)
-            if image_url:
-                update_user_points(user_id, current_points - 1000)
-                update_taken_points(1000)
-                await message.channel.send(f"✅ Deducted 1000 points.\nHere is your AI-generated image:\n{image_url}")
-            else:
-                await message.channel.send("❌ Image generation failed. Please try again later.")
+
+    if message.content.startswith('!image'):
+        prompt = message.content[len('!image'):].strip()
+        if not prompt:
+            await message.channel.send("Please provide a prompt after the command.")
+            return
+        
+        image_url = await generate_image(prompt)
+        if image_url:
+            await message.channel.send(f"Here is your AI-generated image:\n{image_url}")
         else:
-            await message.channel.send("❌ You do not have enough points.")
+            await message.channel.send("❌ Image generation failed. Please try again later.")
 
 client.run(TOKEN)
