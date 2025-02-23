@@ -64,10 +64,12 @@ async def wheel(ctx):
     save_points(points)
     save_jackpot(jackpot)
 
+    await ctx.send(f"The new jackpot is now: {jackpot['amount']} points!")
+
     messages = [
-        f"Win {random.randint(50, 500)}!",
-        f"Win {random.randint(500, 5000)}!",
-        f"Lose {random.randint(1000, 5000)}",
+        f"Win {random.randint(50, 500)}! (Jackpot: {jackpot['amount']})",
+        f"Win {random.randint(500, 5000)}! (Jackpot: {jackpot['amount']})",
+        f"Lose {random.randint(1000, 5000)} (Jackpot: {jackpot['amount']})",
         f"Jackpot: {jackpot['amount']}"
     ]
     
@@ -91,9 +93,9 @@ async def wheel(ctx):
         else:
             points[user_id] += amount
     
-    await msg.edit(content=f'Final Result: {final_result}')
+    await msg.edit(content=f'Final Result: {final_result} (Jackpot: {jackpot["amount"]})')
     save_points(points)
     save_jackpot(jackpot)
-    await ctx.send(f"{ctx.author.mention}, your new balance is: {points[user_id]} points!")
+    await ctx.send(f"{ctx.author.mention}, your new balance is: {points[user_id]} points! (Jackpot: {jackpot['amount']})")
 
 bot.run(load_token())
