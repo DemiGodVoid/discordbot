@@ -36,7 +36,6 @@ bot = commands.Bot(command_prefix=".", intents=intents, help_command=None)
 players = []
 uno_hands = {}
 deck = [f"{color} {value}" for color in ["Red", "Green", "Blue", "Yellow"] for value in range(1, 10)] * 2
-deck += ["+4"] * 4
 random.shuffle(deck)
 current_card = None
 turn_index = 0
@@ -75,6 +74,7 @@ async def ask_for_bets(ctx):
         points[str(player.id)] -= bet_amount
         points_in_pot += bet_amount
     save_points()
+    await ctx.send(f"Total points betted: {points_in_pot}")
     await start_game(ctx)
 
 async def start_game(ctx):
@@ -97,13 +97,10 @@ async def draw(ctx):
     player = players[turn_index]
     if ctx.author != player:
         return
-    while True:
-        new_card = deck.pop()
-        uno_hands[player].append(new_card)
-        if new_card.startswith(current_card.split()[0]) or new_card.endswith(current_card.split()[1]) or new_card == "+4":
-            break
+    new_card = deck.pop()
+    uno_hands[player].append(new_card)
     await send_hands()
-    await ctx.send(f"{player.mention}, you drew a card and can now play!")
+    await ctx.send(f"{player.mention}, you drew **{new_card}**!")
 
 @bot.event
 async def on_message(message):
@@ -120,16 +117,10 @@ async def on_message(message):
         if message.author != player:
             return
 
-        valid_moves = [card for card in uno_hands[player] if card.startswith(current_card.split()[0]) or card.endswith(current_card.split()[1]) or card == "+4"]
+        valid_moves = [card for card in uno_hands[player] if card.startswith(current_card.split()[0]) or card.endswith(current_card.split()[1])]
         
         if message.content in uno_hands[player]:
-            if message.content == "+4":
-                current_card = message.content
-                uno_hands[player].remove(message.content)
-                next_player = players[(turn_index + 1) % 2]
-                uno_hands[next_player].extend([deck.pop() for _ in range(4)])
-                await message.channel.send(f"{message.author.mention} played **+4**! {next_player.mention} draws 4 cards!")
-            elif message.content in valid_moves:
+            if message.content in valid_moves:
                 current_card = message.content
                 uno_hands[player].remove(message.content)
                 await message.channel.send(f"{message.author.mention} played **{current_card}**!")
