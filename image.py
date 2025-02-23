@@ -65,12 +65,13 @@ async def on_message(message):
         current_points = get_user_points(user_id)
 
         if current_points < required_points:
-            await message.channel.send("You don't have enough points to generate an image.")
+            await message.channel.send("❌ You don't have enough points to generate an image.")
             return
 
         # Deduct points and track taken points
         update_user_points(user_id, current_points - required_points)
         update_taken_points(user_id, required_points)
+        await message.channel.send(f"✅ 1000 points have been deducted from your account. Remaining balance: {get_user_points(user_id)} points.")
 
         prompt = message.content[len('!image '):].strip()
         await message.channel.send(f"Generating your image for: **{prompt}** ...")
