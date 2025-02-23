@@ -2,7 +2,6 @@ import discord
 import json
 import os
 import aiohttp
-from bs4 import BeautifulSoup
 
 # Set up bot intents
 intents = discord.Intents.default()
@@ -51,21 +50,28 @@ def update_taken_points(used_points):
     taken_points["total_taken_points"] = taken_points.get("total_taken_points", 0) + used_points
     save_data(TAKEN_POINTS_FILE, taken_points)
 
-# Image Search via Web Scraping (NO API KEY REQUIRED)
-async def search_image(prompt):
+# Generate AI Image (Using Free SD API)
+async def generate_image(prompt):
     async with aiohttp.ClientSession() as session:
-        url = f"https://www.lexica.art/api/v1/search?q={prompt}"
+        url = "https://stablediffusionapi.com/api/v3/text2img"  # Free SD API
 
-        async with session.get(url) as response:
+        payload = {
+            "prompt": prompt,
+            "negative_prompt": "blurry, distorted, low quality",
+            "width": 512,
+            "height": 512,
+            "samples": 1
+        }
+
+        async with session.post(url, json=payload) as response:
             if response.status == 200:
                 data = await response.json()
-                images = data.get("images", [])
-
-                if images:
-                    return images[0]["src"]  # Get first image URL
+                if "output" in data:
+                    return data["output"][0]  # Return image URL
                 else:
                     return None
             else:
+                print(f"API Request Failed with Status: {response.status}")
                 return None
 
 # Bot ready event
@@ -85,16 +91,16 @@ async def on_message(message):
 
         if current_points >= 1000:
             prompt = message.content[len('!image '):].strip()
-            await message.channel.send("⏳ Searching for an AI-generated image, please wait...")
+            await message.channel.send("⏳ Generating your image, please wait...")
 
-            image_url = await search_image(prompt)
+            image_url = await generate_image(prompt)
 
             if image_url:
                 update_user_points(user_id, current_points - 1000)
                 update_taken_points(1000)
                 await message.channel.send(f"✅ Successfully deducted 1000 points.\nHere is your AI-generated image:\n{image_url}")
             else:
-                await message.channel.send("❌ No AI-generated images found. Try another prompt.")
+                await message.channel.send("❌ Image generation failed. Try again later.")
         else:
             await message.channel.send("❌ You do not have enough points.")
 
