@@ -85,23 +85,21 @@ async def on_message(message):
         
         except Exception as e:
             print(f"Error: {e}")
-            update_user_points(user_id, current_points)  # Refund points
-            await message.channel.send("Failed to generate image. Your points have been refunded.")
+            await message.channel.send("An error occurred while processing your request. Please try again later.")
 
 async def generate_image(prompt):
     async with aiohttp.ClientSession() as session:
-        url = f"https://image.pollinations.ai/prompt/{prompt.replace(' ', '%20')}"
-        print(f"Generating image with prompt: {prompt}")
         try:
+            # Example API call (replace with actual endpoint and parameters)
+            url = f"https://api.example.com/generate?prompt={aiohttp.helpers.quote(prompt)}"
             async with session.get(url) as response:
                 if response.status == 200:
                     return await response.read()
                 else:
-                    error_message = await response.text() or "Unknown error occurred."
-                    print(f"Failed to generate image. Status code: {response.status}, Response: {error_message}")
-                    return None
-        except aiohttp.ClientError as e:
-            print(f"HTTP request failed: {e}")
+                    raise Exception(f"Failed to fetch image: {response.status}")
+        except Exception as e:
+            print(f"Error in generate_image: {e}")
             return None
 
+# Start the bot
 client.run(TOKEN)
