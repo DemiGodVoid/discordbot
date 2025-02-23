@@ -1,14 +1,12 @@
 import discord
 import json
 import os
-import asyncio
-import aiohttp
 import googleapiclient.discovery
 
 # Set up bot intents
 intents = discord.Intents.default()
 intents.message_content = True
-intents.members = True  # Required to detect member joins
+intents.members = True
 client = discord.Client(intents=intents)
 
 # Load or request bot token
@@ -33,7 +31,6 @@ else:
         f.write(YOUTUBE_API_KEY)
 
 # File paths
-TRIGGERS_FILE = "triggers.json"
 RULES_FILE = "rules.json"
 POINTS_FILE = "points.json"
 TAKEN_POINTS_FILE = "taken_points.json"
@@ -48,29 +45,9 @@ def save_data(file_path, data):
     with open(file_path, "w") as f:
         json.dump(data, f, indent=4)
 
-triggers = load_data(TRIGGERS_FILE)
 rules = load_data(RULES_FILE)
 points_data = load_data(POINTS_FILE)
 taken_points = load_data(TAKEN_POINTS_FILE)
-
-def get_user_points(user_id):
-    return points_data.get(str(user_id), 0)
-
-def update_user_points(user_id, new_points):
-    points_data[str(user_id)] = new_points
-    save_data(POINTS_FILE, points_data)
-
-def update_taken_points(used_points):
-    taken_points["total_taken_points"] = taken_points.get("total_taken_points", 0) + used_points
-    save_data(TAKEN_POINTS_FILE, taken_points)
-
-async def generate_image(prompt):
-    async with aiohttp.ClientSession() as session:
-        async with session.get(f"https://image.pollinations.ai/prompt/{prompt}") as response:
-            if response.status == 200:
-                data = await response.json()
-                return data.get("url", None)
-            return None
 
 def search_youtube(query):
     youtube = googleapiclient.discovery.build("youtube", "v3", developerKey=YOUTUBE_API_KEY)
@@ -119,7 +96,6 @@ async def on_message(message):
     if message.content == '!commands2':
         embed = discord.Embed(title="More Commands", description="Additional fun and utility commands", color=discord.Color.blue())
         embed.add_field(name="!youtube title - name", value="Search for a YouTube video.", inline=False)
-        embed.add_field(name="!image prompt", value="Generate an image (1000 points per image).", inline=False)
         await message.channel.send(embed=embed)
 
     if message.content == '!games':
@@ -131,28 +107,6 @@ async def on_message(message):
         embed.add_field(name="!giveaway", value="Giveaway points.", inline=False)
         embed.add_field(name="!taken", value="Total spent points.", inline=False)
         await message.channel.send(embed=embed)
-
-    if message.content.startswith('!image '):
-        user_id = str(message.author.id)
-        current_points = get_user_points(user_id)
-        print(f"User {user_id} has {current_points} points.")
-        
-        if current_points >= 1000:
-            prompt = message.content[len('!image '):].strip()
-            print(f"Generating image for prompt: {prompt}")
-            image_url = await generate_image(prompt)
-            
-            if image_url:
-                update_user_points(user_id, current_points - 1000)
-                update_taken_points(1000)
-                print(f"Image generated: {image_url}")
-                await message.channel.send(f"Here is your generated image: {image_url}")
-            else:
-                print("Image generation failed.")
-                await message.channel.send("Failed to generate image.")
-        else:
-            print("User does not have enough points.")
-            await message.channel.send("You do not have enough points.")
 
     if message.content.startswith('!youtube '):
         query = message.content[len('!youtube '):].strip()
