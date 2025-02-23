@@ -39,10 +39,12 @@ def get_user_points(user_id):
     return points_data.get(str(user_id), 0)
 
 def update_user_points(user_id, new_points):
+    global points_data
     points_data[str(user_id)] = new_points
-    save_data(POINTS_FILE, points_data)
+    save_data(POINTS_FILE, points_data)  # Ensure it is saved properly
 
 def update_taken_points(used_points):
+    global taken_points
     taken_points["total_taken_points"] = taken_points.get("total_taken_points", 0) + used_points
     save_data(TAKEN_POINTS_FILE, taken_points)
 
@@ -50,9 +52,13 @@ async def generate_image(prompt):
     async with aiohttp.ClientSession() as session:
         async with session.get(f"https://image.pollinations.ai/prompt/{prompt}") as response:
             if response.status == 200:
-                data = await response.json()
-                return data.get("url", None)
-            return None
+                try:
+                    data = await response.json()
+                    return data.get("url", None)
+                except Exception:
+                    return None
+            else:
+                return None
 
 @client.event
 async def on_ready():
@@ -74,10 +80,10 @@ async def on_message(message):
             if image_url:
                 update_user_points(user_id, current_points - 1000)
                 update_taken_points(1000)
-                await message.channel.send(f"Here is your generated image: {image_url}")
+                await message.channel.send(f"✅ Successfully deducted 1000 points.\nHere is your generated image: {image_url}")
             else:
-                await message.channel.send("Failed to generate image.")
+                await message.channel.send("❌ Failed to generate image. Please try again later.")
         else:
-            await message.channel.send("You do not have enough points.")
+            await message.channel.send("❌ You do not have enough points.")
 
 client.run(TOKEN)
