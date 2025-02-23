@@ -45,6 +45,10 @@ def update_taken_points(user_id, points):
     taken_points_data[str(user_id)] = taken_points_data.get(str(user_id), 0) + points
     save_data(TAKEN_POINTS_FILE, taken_points_data)
 
+# Get total points taken
+def get_total_taken_points():
+    return sum(taken_points_data.values())
+
 # Enable required intents
 intents = discord.Intents.default()
 intents.message_content = True  # Ensure bot can read message content
@@ -59,6 +63,10 @@ async def on_message(message):
     if message.author == client.user:
         return
 
+    if message.content.lower() == '!taken':
+        total_taken = get_total_taken_points()
+        await message.channel.send(f"Total points taken from users: {total_taken}")
+
     if message.content.lower().startswith('!image'):
         user_id = str(message.author.id)
         required_points = 1000
@@ -71,6 +79,8 @@ async def on_message(message):
         # Deduct points and track taken points
         update_user_points(user_id, current_points - required_points)
         update_taken_points(user_id, required_points)
+        save_data(TAKEN_POINTS_FILE, taken_points_data)
+
         await message.channel.send(f"✅ 1000 points have been deducted from your account. Remaining balance: {get_user_points(user_id)} points.")
 
         prompt = message.content[len('!image '):].strip()
