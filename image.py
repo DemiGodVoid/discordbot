@@ -50,17 +50,23 @@ def update_taken_points(used_points):
     taken_points["total_taken_points"] = taken_points.get("total_taken_points", 0) + used_points
     save_data(TAKEN_POINTS_FILE, taken_points)
 
-# Generate AI image using Pollinations AI
-async def generate_image(prompt):
+# Generate AI image using Pollinations AI with retry mechanism
+async def generate_image(prompt, retries=3):
     async with aiohttp.ClientSession() as session:
         url = f"https://image.pollinations.ai/prompt/{prompt.replace(' ', '%20')}"
         print(f"Generating image with prompt: {prompt}")
-        async with session.get(url) as response:
-            if response.status == 200:
-                return await response.text()  # Pollinations directly returns an image
-            else:
-                print(f"Error generating image. Status code: {response.status}")
-                return None
+        
+        for attempt in range(retries):
+            async with session.get(url) as response:
+                if response.status == 200:
+                    return await response.text()  # Pollinations directly returns an image
+                else:
+                    print(f"Error generating image. Status code: {response.status}. Attempt {attempt+1}/{retries}")
+            
+            if attempt < retries - 1:
+                await asyncio.sleep(2)  # Wait for 2 seconds before retrying
+            
+        return None
 
 # Bot ready event
 @client.event
@@ -84,7 +90,7 @@ async def on_message(message):
                 update_taken_points(1000)
                 await message.channel.send(f"✅ Deducted 1000 points.\nHere is your AI-generated image:\n{image_url}")
             else:
-                await message.channel.send("❌ Image generation failed. Try again later.")
+                await message.channel.send("❌ Image generation failed. Please try again later.")
         else:
             await message.channel.send("❌ You do not have enough points.")
 
