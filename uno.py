@@ -36,12 +36,11 @@ bot = commands.Bot(command_prefix=".", intents=intents, help_command=None)
 players = []
 uno_hands = {}
 deck = [f"{color} {value}" for color in ["Red", "Green", "Blue", "Yellow"] for value in range(1, 10)] * 2
-deck += ["+4"] * 4  # Adding +4 cards
+deck += ["+4"] * 4
 random.shuffle(deck)
 current_card = None
-points_in_pot = 0
 turn_index = 0
-game_mode = None
+points_in_pot = 0
 
 @bot.event
 async def on_ready():
@@ -49,50 +48,34 @@ async def on_ready():
 
 @bot.command()
 async def start_uno(ctx):
-    global game_mode
+    global points_in_pot
     players.clear()
     uno_hands.clear()
-    game_mode = None
-    await ctx.send("Choose a game mode: `.2 players` or `.4 players`.")
+    points_in_pot = 0
+    await ctx.send("Game mode set to 2 players! Use `.join` to enter.")
 
 @bot.command()
-async def two_players(ctx):
-    global game_mode
-    if game_mode is None:
-        game_mode = 2
-        await ctx.send("Game mode set to 2 players! Use `.one` and `.two` to join.")
+async def join(ctx):
+    if len(players) < 2:
+        players.append(ctx.author)
+        await ctx.send(f"{ctx.author.name} has joined!")
+    if len(players) == 2:
+        await ask_for_bets(ctx)
 
-@bot.command()
-async def four_players(ctx):
-    global game_mode
-    if game_mode is None:
-        game_mode = 4
-        await ctx.send("Game mode set to 4 players! Use `.one`, `.two`, `.three`, and `.four` to join.")
-
-@bot.command()
-async def one(ctx):
-    await add_player(ctx, ctx.author)
-
-@bot.command()
-async def two(ctx):
-    await add_player(ctx, ctx.author)
-
-@bot.command()
-async def three(ctx):
-    if game_mode == 4:
-        await add_player(ctx, ctx.author)
-
-@bot.command()
-async def four(ctx):
-    if game_mode == 4:
-        await add_player(ctx, ctx.author)
-
-async def add_player(ctx, player):
-    if player not in players and len(players) < game_mode:
-        players.append(player)
-        await ctx.send(f"{player.name} has joined!")
-    if len(players) == game_mode:
-        await start_game(ctx)
+async def ask_for_bets(ctx):
+    global points_in_pot
+    for player in players:
+        await ctx.send(f"{player.mention}, enter the amount of points to bet:")
+        def check(msg): return msg.author == player and msg.content.isdigit()
+        bet_msg = await bot.wait_for("message", check=check)
+        bet_amount = int(bet_msg.content)
+        if points.get(str(player.id), 0) < bet_amount:
+            await ctx.send("You don't got that many points yet!")
+            return
+        points[str(player.id)] -= bet_amount
+        points_in_pot += bet_amount
+    save_points()
+    await start_game(ctx)
 
 async def start_game(ctx):
     global current_card, turn_index
@@ -111,16 +94,8 @@ async def send_hands():
 
 @bot.event
 async def on_message(message):
-    global current_card, turn_index, game_mode
+    global current_card, turn_index
     if message.author == bot.user:
-        return
-    
-    content = message.content.strip()
-    if content == ".2 players":
-        await two_players(await bot.get_context(message))
-        return
-    elif content == ".4 players":
-        await four_players(await bot.get_context(message))
         return
     
     if message.content.startswith("."):
@@ -130,31 +105,49 @@ async def on_message(message):
     if message.author in players:
         player = players[turn_index]
         if message.author != player:
-            return  # Ignore messages from non-turn players
+            return
 
         valid_moves = [card for card in uno_hands[player] if card.startswith(current_card.split()[0]) or card.endswith(current_card.split()[1]) or card == "+4"]
         
-        if content in uno_hands[player]:
-            if content == "+4":
-                next_player = players[(turn_index + 1) % game_mode]
+        if message.content in uno_hands[player]:
+            if message.content == "+4":
+                next_player = players[(turn_index + 1) % 2]
                 uno_hands[next_player].extend([deck.pop() for _ in range(4)])
                 await message.channel.send(f"{message.author.mention} played **+4**! {next_player.mention} draws 4 cards!")
-            elif content in valid_moves:
-                current_card = content
-                uno_hands[player].remove(content)
+            elif message.content in valid_moves:
+                current_card = message.content
+                uno_hands[player].remove(message.content)
                 await message.channel.send(f"{message.author.mention} played **{current_card}**!")
-                
                 if not uno_hands[player]:
-                    await message.channel.send(f"{message.author.mention} wins the game!")
+                    await handle_win(message.author, message.channel)
                     return
             else:
-                await message.channel.send("Invalid move! You must match the color or the number, or play +4.")
+                await message.channel.send("Invalid move! Draw a card until you get a playable one.")
+                while True:
+                    new_card = deck.pop()
+                    uno_hands[player].append(new_card)
+                    if new_card.startswith(current_card.split()[0]) or new_card.endswith(current_card.split()[1]) or new_card == "+4":
+                        break
+                await send_hands()
                 return
             
-            turn_index = (turn_index + 1) % game_mode
+            turn_index = (turn_index + 1) % 2
             await send_hands()
             await message.channel.send(f"{players[turn_index].mention}, it's your turn!")
         else:
             await message.channel.send("You don't have that card in your hand!")
+            
+        if not any(card.startswith(current_card.split()[0]) or card.endswith(current_card.split()[1]) or card == "+4" for card in uno_hands[players[turn_index]]):
+            await message.channel.send("Draw and give both players 10k points!")
+            for player in players:
+                points[str(player.id)] = points.get(str(player.id), 0) + 10000
+            save_points()
+
+async def handle_win(winner, channel):
+    global points_in_pot
+    points[str(winner.id)] = points.get(str(winner.id), 0) + points_in_pot
+    save_points()
+    await channel.send(f"{winner.mention} wins the game and takes {points_in_pot} points!")
+    points_in_pot = 0
 
 bot.run(token)
