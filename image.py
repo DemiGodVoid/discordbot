@@ -22,7 +22,7 @@ def load_data(file_path):
     if os.path.exists(file_path):
         with open(file_path, "r") as f:
             return json.load(f)
-    return {}
+    return {"total_taken_points": 0}
 
 def save_data(file_path, data):
     with open(file_path, "w") as f:
@@ -41,13 +41,9 @@ def update_user_points(user_id, new_points):
     save_data(POINTS_FILE, points_data)
 
 # Track deducted points
-def update_taken_points(user_id, points):
-    taken_points_data[str(user_id)] = taken_points_data.get(str(user_id), 0) + points
+def update_taken_points(points):
+    taken_points_data["total_taken_points"] += points
     save_data(TAKEN_POINTS_FILE, taken_points_data)
-
-# Get total points taken
-def get_total_taken_points():
-    return sum(taken_points_data.values())
 
 # Enable required intents
 intents = discord.Intents.default()
@@ -63,10 +59,6 @@ async def on_message(message):
     if message.author == client.user:
         return
 
-    if message.content.lower() == '!taken':
-        total_taken = get_total_taken_points()
-        await message.channel.send(f"Total points taken from users: {total_taken}")
-
     if message.content.lower().startswith('!image'):
         user_id = str(message.author.id)
         required_points = 1000
@@ -78,7 +70,7 @@ async def on_message(message):
 
         # Deduct points and track taken points
         update_user_points(user_id, current_points - required_points)
-        update_taken_points(user_id, required_points)
+        update_taken_points(required_points)
         save_data(TAKEN_POINTS_FILE, taken_points_data)
 
         await message.channel.send(f"✅ 1000 points have been deducted from your account. Remaining balance: {get_user_points(user_id)} points.")
