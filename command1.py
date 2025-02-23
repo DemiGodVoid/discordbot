@@ -1,9 +1,7 @@
 import discord
 import json
 import os
-import aiohttp
 import asyncio
-import urllib.parse
 
 # Set up bot intents
 intents = discord.Intents.default()
@@ -36,9 +34,6 @@ TRIGGERS_FILE = "triggers.json"
 RULES_FILE = "rules.json"
 POINTS_FILE = "points.json"
 TAKEN_POINTS_FILE = "taken_points.json"
-
-YOUTUBE_SEARCH_URL = "https://www.googleapis.com/youtube/v3/search"
-POLLINATIONS_URL = "https://image.pollinations.ai/prompt/{}"
 
 # Load data functions
 def load_data(file_path):
@@ -77,10 +72,7 @@ async def on_member_join(member):
     guild_id = str(member.guild.id)
     if guild_id in rules and rules[guild_id]:
         rule_message = f"Welcome to **{member.guild.name}**, {member.mention}!\n\n**Server Rules:**\n{rules[guild_id]}"
-        for channel in member.guild.text_channels:
-            if channel.permissions_for(member.guild.me).send_messages:
-                await channel.send(rule_message)
-                break
+        await member.send(rule_message)
 
 @client.event
 async def on_message(message):
@@ -88,31 +80,35 @@ async def on_message(message):
         return
 
     guild_id = str(message.guild.id)
-    msg_lower = message.content.lower()
 
-    if msg_lower in triggers.get(guild_id, {}):
-        await message.channel.send(triggers[guild_id][msg_lower])
+    if message.content == '!rules':
+        if guild_id in rules and rules[guild_id]:
+            await message.channel.send(f"**Server Rules:**\n{rules[guild_id]}")
+        else:
+            await message.channel.send("No rules have been set for this server.")
 
-    if message.content == '!ping':
-        await message.channel.send('PONG')
+    if message.content.startswith('!set_rules '):
+        if message.author.guild_permissions.administrator:
+            new_rules = message.content[len('!set_rules '):].strip()
+            rules[guild_id] = new_rules
+            save_data(RULES_FILE, rules)
+            await message.channel.send("Server rules updated successfully!")
+        else:
+            await message.channel.send("You do not have permission to set rules.")
 
     if message.content == '!commands':
         embed = discord.Embed(title="Commands", description="List of available commands", color=discord.Color.blue())
-        embed.add_field(name="!ping", value="See if bots online.", inline=False)
-        embed.add_field(name="!gif message", value="Send a gif message.", inline=False)
-        embed.add_field(name="!trigger message=message", value="Create a trigger response!.", inline=False)
-        embed.add_field(name="!set_rules message", value="Set server Rules", inline=False)
         embed.add_field(name="!rules", value="View server Rules", inline=False)
-        embed.add_field(name="!commands2", value="View more commands(fun ones too!", inline=False)
+        embed.add_field(name="!set_rules", value="Set server Rules (Admin only)", inline=False)
+        embed.add_field(name="!games", value="List available games", inline=False)
+        embed.add_field(name="!commands2", value="View more commands", inline=False)
         await message.channel.send(embed=embed)
-        
 
     if message.content == '!commands2':
-        embed = discord.Embed(title="Commands", description="List of available commands", color=discord.Color.blue())
+        embed = discord.Embed(title="More Commands", description="Additional fun and utility commands", color=discord.Color.blue())
         embed.add_field(name="!youtube title - name", value="Search for a YouTube video.", inline=False)
-        embed.add_field(name="!chat prompt", value="Chat with GPT (500 points per chat).", inline=False)
         embed.add_field(name="!image prompt", value="Generate an image (1000 points per image).", inline=False)
-        embed.add_field(name="!games", value="List of games.", inline=False)
+        embed.add_field(name="!chat prompt", value="Chat with GPT (500 points per chat).", inline=False)
         await message.channel.send(embed=embed)
 
     if message.content == '!games':
@@ -126,33 +122,5 @@ async def on_message(message):
         embed.add_field(name="!giveaway", value="Giveaway points.", inline=False)
         embed.add_field(name="!taken", value="Total spent points.", inline=False)
         await message.channel.send(embed=embed)
-
-    if message.content.startswith('!youtube '):
-        query = message.content[len('!youtube '):].strip()
-        video_url = await search_youtube(query)
-        await message.channel.send(video_url if video_url else "No results found.")
-
-    if message.content.startswith('!image '):
-        user_id = message.author.id
-        if get_user_points(user_id) < 1000:
-            await message.channel.send("Not enough points.")
-            return
-        update_user_points(user_id, get_user_points(user_id) - 1000)
-        update_taken_points(1000)
-        prompt = message.content[len('!image '):].strip()
-        image_url = POLLINATIONS_URL.format(urllib.parse.quote(prompt))
-        await message.channel.send(image_url)
-
-async def search_youtube(query):
-    async with aiohttp.ClientSession() as session:
-        async with session.get(YOUTUBE_SEARCH_URL, params={
-            'part': 'snippet',
-            'q': query,
-            'key': YOUTUBE_API_KEY,
-            'maxResults': 1,
-            'type': 'video'
-        }) as response:
-            data = await response.json()
-            return f"https://www.youtube.com/watch?v={data['items'][0]['id']['videoId']}" if 'items' in data and data['items'] else None
 
 client.run(TOKEN)
