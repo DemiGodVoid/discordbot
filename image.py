@@ -50,18 +50,22 @@ def update_taken_points(used_points):
     taken_points["total_taken_points"] = taken_points.get("total_taken_points", 0) + used_points
     save_data(TAKEN_POINTS_FILE, taken_points)
 
-# Image Generation using Craiyon AI (No API Key Required)
+# Image Generation using Lexica (No API Key Required)
 async def generate_image(prompt):
     async with aiohttp.ClientSession() as session:
-        url = "https://backend.craiyon.com/generate"
-        payload = {"prompt": prompt}
-
-        async with session.post(url, json=payload) as response:
+        url = f"https://lexica.art/api/v1/search?q={prompt}"
+        
+        async with session.get(url) as response:
             if response.status == 200:
                 try:
                     data = await response.json()
-                    image_url = f"https://img.craiyon.com/{data['images'][0]}"  # Get the first generated image
-                    return image_url
+                    images = data.get("images", [])
+
+                    if images:
+                        return images[0]["src"]  # Return the first image URL
+                    else:
+                        print("⚠️ No images found for this prompt!")
+                        return None
                 except Exception as e:
                     print(f"JSON Parsing Error: {e}")  # Debugging error
                     return None
@@ -93,7 +97,7 @@ async def on_message(message):
             if image_url:
                 update_user_points(user_id, current_points - 1000)
                 update_taken_points(1000)
-                await message.channel.send(f"✅ Successfully deducted 1000 points.\nHere is your generated image:", file=discord.File(image_url))
+                await message.channel.send(f"✅ Successfully deducted 1000 points.\nHere is your generated image:\n{image_url}")
             else:
                 await message.channel.send("❌ Failed to generate image. Please try again later.")
         else:
