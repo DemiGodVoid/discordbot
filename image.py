@@ -14,7 +14,7 @@ if os.path.exists(TOKEN_FILE):
     with open(TOKEN_FILE, "r") as f:
         TOKEN = f.read().strip()
 else:
-    TOKEN = input("Please enter your Discord bot token: ").strip()
+    TOKEN = input("Enter your Discord bot token: ").strip()
     with open(TOKEN_FILE, "w") as f:
         f.write(TOKEN)
 
@@ -50,29 +50,15 @@ def update_taken_points(used_points):
     taken_points["total_taken_points"] = taken_points.get("total_taken_points", 0) + used_points
     save_data(TAKEN_POINTS_FILE, taken_points)
 
-# Generate AI Image (Using Free SD API)
+# Generate AI image using Pollinations AI
 async def generate_image(prompt):
     async with aiohttp.ClientSession() as session:
-        url = "https://stablediffusionapi.com/api/v3/text2img"  # Free SD API
-
-        payload = {
-            "prompt": prompt,
-            "negative_prompt": "blurry, distorted, low quality",
-            "width": 512,
-            "height": 512,
-            "samples": 1
-        }
-
-        async with session.post(url, json=payload) as response:
+        url = f"https://image.pollinations.ai/prompt/{prompt.replace(' ', '%20')}"
+        
+        async with session.get(url) as response:
             if response.status == 200:
-                data = await response.json()
-                if "output" in data:
-                    return data["output"][0]  # Return image URL
-                else:
-                    return None
-            else:
-                print(f"API Request Failed with Status: {response.status}")
-                return None
+                return url  # Pollinations directly returns an image
+            return None
 
 # Bot ready event
 @client.event
@@ -98,7 +84,7 @@ async def on_message(message):
             if image_url:
                 update_user_points(user_id, current_points - 1000)
                 update_taken_points(1000)
-                await message.channel.send(f"✅ Successfully deducted 1000 points.\nHere is your AI-generated image:\n{image_url}")
+                await message.channel.send(f"✅ Deducted 1000 points.\nHere is your AI-generated image:\n{image_url}")
             else:
                 await message.channel.send("❌ Image generation failed. Try again later.")
         else:
