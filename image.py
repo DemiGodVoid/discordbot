@@ -15,6 +15,7 @@ else:
 
 # File paths
 POINTS_FILE = "points.json"
+TAKEN_POINTS_FILE = "taken_points.json"
 
 # Load or create points data
 def load_data(file_path):
@@ -28,6 +29,7 @@ def save_data(file_path, data):
         json.dump(data, f, indent=4)
 
 points_data = load_data(POINTS_FILE)
+taken_points_data = load_data(TAKEN_POINTS_FILE)
 
 # Get user's current points
 def get_user_points(user_id):
@@ -38,10 +40,15 @@ def update_user_points(user_id, new_points):
     points_data[str(user_id)] = new_points
     save_data(POINTS_FILE, points_data)
 
-# Create intents object and enable the necessary intents
+# Track deducted points
+def update_taken_points(user_id, points):
+    taken_points_data[str(user_id)] = taken_points_data.get(str(user_id), 0) + points
+    save_data(TAKEN_POINTS_FILE, taken_points_data)
+
+# Enable required intents
 intents = discord.Intents.default()
-intents.messages = True  # Enable receiving messages
-client = discord.Client(intents=intents)  # Pass the intents to the client
+intents.message_content = True  # Ensure bot can read message content
+client = discord.Client(intents=intents)
 
 @client.event
 async def on_ready():
@@ -51,50 +58,51 @@ async def on_ready():
 async def on_message(message):
     if message.author == client.user:
         return
-    if message.content.startswith('!image'):
+
+    if message.content.lower().startswith('!image'):
         user_id = str(message.author.id)
-        required_points = 1000  # Points needed for image generation
+        required_points = 1000
         current_points = get_user_points(user_id)
-        
+
         if current_points < required_points:
             await message.channel.send("You don't have enough points to generate an image.")
             return
-        
-        # Deduct points and inform user that processing has started
+
+        # Deduct points and track taken points
         update_user_points(user_id, current_points - required_points)
+        update_taken_points(user_id, required_points)
+
         prompt = message.content[len('!image '):].strip()
-        
-        # Confirm the start of the process
-        await message.channel.send("Processing your request to generate an image...")
-        
+        await message.channel.send(f"Generating your image for: **{prompt}** ...")
+
         try:
             generated_image = await generate_image(prompt)
-            
+
             if generated_image:
                 with tempfile.NamedTemporaryFile(delete=False, suffix='.png') as temp_file:
                     temp_file.write(generated_image)
                     file_path = temp_file.name
+
                 try:
-                    await message.channel.send(file=discord.File(fp=file_path))
-                    await message.channel.send("Image successfully generated and sent!")
+                    with open(file_path, "rb") as f:
+                        await message.channel.send(file=discord.File(f, "generated_image.png"))
+                    await message.channel.send("✅ Image successfully generated and sent!")
                 finally:
-                    os.remove(file_path)  # Clean up the temporary file
-            
+                    os.remove(file_path)  # Clean up
             else:
                 raise Exception("Image generation failed.")
-        
+
         except Exception as e:
             print(f"Error: {e}")
-            await message.channel.send("An error occurred while processing your request. Please try again later.")
+            await message.channel.send("⚠️ An error occurred while processing your request. Please try again later.")
 
 async def generate_image(prompt):
     async with aiohttp.ClientSession() as session:
         try:
-            # Example API call (replace with actual endpoint and parameters)
-            url = f"https://api.example.com/generate?prompt={aiohttp.helpers.quote(prompt)}"
+            url = f"https://image.pollinations.ai/prompt/{aiohttp.helpers.quote(prompt)}"
             async with session.get(url) as response:
                 if response.status == 200:
-                    return await response.read()
+                    return await response.read()  # Return image bytes
                 else:
                     raise Exception(f"Failed to fetch image: {response.status}")
         except Exception as e:
