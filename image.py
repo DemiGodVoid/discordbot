@@ -54,11 +54,13 @@ def update_taken_points(used_points):
 async def generate_image(prompt):
     async with aiohttp.ClientSession() as session:
         url = f"https://image.pollinations.ai/prompt/{prompt.replace(' ', '%20')}"
-        
+        print(f"Generating image with prompt: {prompt}")
         async with session.get(url) as response:
             if response.status == 200:
-                return url  # Pollinations directly returns an image
-            return None
+                return await response.text()  # Pollinations directly returns an image
+            else:
+                print(f"Error generating image. Status code: {response.status}")
+                return None
 
 # Bot ready event
 @client.event
@@ -70,17 +72,13 @@ async def on_ready():
 async def on_message(message):
     if message.author == client.user:
         return
-
     if message.content.startswith('!image '):
         user_id = str(message.author.id)
         current_points = get_user_points(user_id)
-
         if current_points >= 1000:
             prompt = message.content[len('!image '):].strip()
             await message.channel.send("⏳ Generating your image, please wait...")
-
             image_url = await generate_image(prompt)
-
             if image_url:
                 update_user_points(user_id, current_points - 1000)
                 update_taken_points(1000)
