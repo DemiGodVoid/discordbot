@@ -55,25 +55,34 @@ async def on_message(message):
         user_id = str(message.author.id)
         required_points = 1000  # Points needed for image generation
         current_points = get_user_points(user_id)
+        
         if current_points < required_points:
             await message.channel.send("You don't have enough points to generate an image.")
             return
-        # Deduct points
+        
+        # Deduct points and inform user that processing has started
         update_user_points(user_id, current_points - required_points)
         prompt = message.content[len('!image '):].strip()
+        
+        # Confirm the start of the process
+        await message.channel.send("Processing your request to generate an image...")
+        
         try:
             generated_image = await generate_image(prompt)
+            
             if generated_image:
-                # Save the image temporarily and send it
                 with tempfile.NamedTemporaryFile(delete=False, suffix='.png') as temp_file:
                     temp_file.write(generated_image)
                     file_path = temp_file.name
                 try:
                     await message.channel.send(file=discord.File(fp=file_path))
+                    await message.channel.send("Image successfully generated and sent!")
                 finally:
                     os.remove(file_path)  # Clean up the temporary file
+            
             else:
                 raise Exception("Image generation failed.")
+        
         except Exception as e:
             print(f"Error: {e}")
             update_user_points(user_id, current_points)  # Refund points
@@ -88,7 +97,8 @@ async def generate_image(prompt):
                 if response.status == 200:
                     return await response.read()
                 else:
-                    print(f"Failed to generate image. Status code: {response.status}, Response: {await response.text()}")
+                    error_message = await response.text() or "Unknown error occurred."
+                    print(f"Failed to generate image. Status code: {response.status}, Response: {error_message}")
                     return None
         except aiohttp.ClientError as e:
             print(f"HTTP request failed: {e}")
