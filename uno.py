@@ -92,6 +92,19 @@ async def send_hands():
         embed = discord.Embed(title="Your Uno Hand", description="\n".join(uno_hands[player]), color=discord.Color.blue())
         await player.send(embed=embed)
 
+@bot.command()
+async def draw(ctx):
+    player = players[turn_index]
+    if ctx.author != player:
+        return
+    while True:
+        new_card = deck.pop()
+        uno_hands[player].append(new_card)
+        if new_card.startswith(current_card.split()[0]) or new_card.endswith(current_card.split()[1]) or new_card == "+4":
+            break
+    await send_hands()
+    await ctx.send(f"{player.mention}, you drew a card and can now play!")
+
 @bot.event
 async def on_message(message):
     global current_card, turn_index
@@ -111,6 +124,8 @@ async def on_message(message):
         
         if message.content in uno_hands[player]:
             if message.content == "+4":
+                current_card = message.content
+                uno_hands[player].remove(message.content)
                 next_player = players[(turn_index + 1) % 2]
                 uno_hands[next_player].extend([deck.pop() for _ in range(4)])
                 await message.channel.send(f"{message.author.mention} played **+4**! {next_player.mention} draws 4 cards!")
@@ -122,13 +137,7 @@ async def on_message(message):
                     await handle_win(message.author, message.channel)
                     return
             else:
-                await message.channel.send("Invalid move! Draw a card until you get a playable one.")
-                while True:
-                    new_card = deck.pop()
-                    uno_hands[player].append(new_card)
-                    if new_card.startswith(current_card.split()[0]) or new_card.endswith(current_card.split()[1]) or new_card == "+4":
-                        break
-                await send_hands()
+                await bot.get_command("draw").invoke(await bot.get_context(message))
                 return
             
             turn_index = (turn_index + 1) % 2
@@ -136,12 +145,6 @@ async def on_message(message):
             await message.channel.send(f"{players[turn_index].mention}, it's your turn!")
         else:
             await message.channel.send("You don't have that card in your hand!")
-            
-        if not any(card.startswith(current_card.split()[0]) or card.endswith(current_card.split()[1]) or card == "+4" for card in uno_hands[players[turn_index]]):
-            await message.channel.send("Draw and give both players 10k points!")
-            for player in players:
-                points[str(player.id)] = points.get(str(player.id), 0) + 10000
-            save_points()
 
 async def handle_win(winner, channel):
     global points_in_pot
