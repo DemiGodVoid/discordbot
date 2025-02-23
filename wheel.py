@@ -47,7 +47,7 @@ async def on_ready():
     print(f'Logged in as {bot.user}')
 
 @bot.command()
-@commands.cooldown(1, 10, commands.BucketType.user)  # 10-second cooldown per user
+@commands.cooldown(1, 10, commands.BucketType.default)  # 10-second cooldown for all users globally
 async def wheel(ctx):
     user_id = str(ctx.author.id)
     points = load_points()
