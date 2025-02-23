@@ -117,28 +117,19 @@ async def on_message(message):
 
     if message.content == '!commands2':
         embed = discord.Embed(title="More Commands", description="Additional fun and utility commands", color=discord.Color.blue())
-        embed.add_field(name="!youtube title - name", value="Search for a YouTube video.", inline=False)
-        embed.add_field(name="!image prompt", value="Generate an image (1000 points per image).", inline=False)
+        embed.add_field(name="!youtube <title>", value="Search for a YouTube video.", inline=False)
+        embed.add_field(name="!image <prompt>", value="Generate an image (1000 points per image).", inline=False)
         await message.channel.send(embed=embed)
 
     if message.content == '!games':
         embed = discord.Embed(title="Bot Games", description="List of available games", color=discord.Color.green())
         embed.add_field(name="!connect4", value="Play Connect 4! Win points", inline=False)
-        embed.add_field(name="!roll amount", value="Gamble points.", inline=False)
+        embed.add_field(name="!roll <amount>", value="Gamble points.", inline=False)
         embed.add_field(name="!bal", value="Check your points.", inline=False)
         embed.add_field(name="!points", value="See all points.", inline=False)
         embed.add_field(name="!giveaway", value="Giveaway points.", inline=False)
         embed.add_field(name="!taken", value="Total spent points.", inline=False)
         await message.channel.send(embed=embed)
-
-    if message.content.startswith('!youtube '):
-        query = message.content[len('!youtube '):].strip()
-        video_url = search_youtube(query)
-        await message.channel.send(f"YouTube Search Result: {video_url}")
-
-    if message.content == '!taken':
-        total_taken = taken_points.get("total_taken_points", 0)
-        await message.channel.send(f"Total spent points: {total_taken}")
 
     if message.content.startswith('!image '):
         user_id = str(message.author.id)
@@ -153,5 +144,10 @@ async def on_message(message):
                 await message.channel.send("Failed to generate image.")
         else:
             await message.channel.send("You do not have enough points.")
+
+    if message.content.startswith('!youtube '):
+        query = message.content[len('!youtube '):].strip()
+        video_url = search_youtube(query)
+        await message.channel.send(f"YouTube Search Result: {video_url}")
 
 client.run(TOKEN)
