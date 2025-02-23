@@ -82,11 +82,11 @@ async def wheel(ctx):
         amount_won = points[user_id] - starting_balance
     else:
         if random.randint(0, 1) == 0:
-            amount = random.randint(1, 600)
+            amount = random.randint(1, 5000)  # Changed the win range to 1-5000
             points[user_id] += amount
             final_result = f"Win {amount}!"
         else:
-            amount = random.randint(1, 600)
+            amount = random.randint(1, 5000)  # Changed the lose range to 1-5000
             points[user_id] -= amount
             final_result = f"Lose {amount}" 
         amount_won = points[user_id] - starting_balance
