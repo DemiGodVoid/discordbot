@@ -3,6 +3,7 @@ import json
 import os
 import aiohttp
 import asyncio
+import tempfile
 
 # Set up bot intents
 intents = discord.Intents.default()
@@ -63,47 +64,8 @@ async def generate_image(prompt, retries=3):
                     return await response.read()  # Return the raw bytes of the image
                 else:
                     print(f"Error generating image. Status code: {response.status}. Attempt {attempt+1}/{retries}")
-            
-            if attempt < retries - 1:
-                await asyncio.sleep(2)  # Wait for 2 seconds before retrying
-            
+        
+        print("Failed to generate image after multiple attempts.")
         return None
-
-@client.event
-async def on_ready():
-    print(f'Logged in as {client.user}')
-
-@client.event
-async def on_message(message):
-    if message.author == client.user:
-        return
-
-    if message.content.startswith('!image'):
-        prompt = message.content[len('!image'):].strip()
-        if not prompt:
-            await message.channel.send("Please provide a prompt after the command.")
-            return
-        
-        # Deduct 1000 points from the user
-        user_id = str(message.author.id)
-        current_points = get_user_points(user_id)
-        if current_points < 1000:
-            await message.channel.send("You don't have enough points to generate an image. You need at least 1000 points.")
-            return
-        
-        new_points = current_points - 1000
-        update_user_points(user_id, new_points)
-        update_taken_points(1000)
-
-        # Generate and send the image
-        image_content = await generate_image(prompt)
-        if image_content:
-            # Send the image as a file attachment
-            await message.channel.send(file=discord.File(fp=image_content, filename="generated_image.png"))
-            await message.author.send(f"Successfully deducted 1000 points from your account. You now have {new_points} points remaining.")
-        else:
-            update_user_points(user_id, current_points)  # Refund the points if image generation fails
-            update_taken_points(-1000)
-            await message.channel.send("❌ Unable to generate image. Please try again later.")
 
 client.run(TOKEN)
