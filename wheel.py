@@ -71,35 +71,30 @@ async def wheel(ctx):
 
     await ctx.send(f"{ctx.author.mention}, your balance before spinning: {starting_balance} points. The new jackpot is now: {jackpot['amount']} points!")
 
-    messages = [
-        f"Win {random.randint(1, 600)}! (Jackpot: {jackpot['amount']})",
-        f"Lose {random.randint(1, 600)} (Jackpot: {jackpot['amount']})"
-    ]
-    
-    msg = await ctx.send(messages[0])
-    
-    for _ in range(5):
-        await asyncio.sleep(1)
-        msg_text = random.choice(messages)
-        await msg.edit(content=msg_text)
+    msg = await ctx.send("Spinning...")
+    await asyncio.sleep(5)
     
     # 2% chance of hitting the jackpot
     if random.randint(1, 100) <= 2:
         final_result = f"Jackpot: {jackpot['amount']}"
         points[user_id] += jackpot["amount"]
         jackpot["amount"] = 0  # Reset jackpot after win
+        amount_won = points[user_id] - starting_balance
     else:
-        final_result = random.choice(messages)
-        amount = int(''.join(filter(str.isdigit, final_result)))
-        if "Lose" in final_result:
-            points[user_id] -= amount
-        else:
+        if random.randint(0, 1) == 0:
+            amount = random.randint(1, 600)
             points[user_id] += amount
+            final_result = f"Win {amount}!"
+        else:
+            amount = random.randint(1, 600)
+            points[user_id] -= amount
+            final_result = f"Lose {amount}" 
+        amount_won = points[user_id] - starting_balance
     
     await msg.edit(content=f'Final Result: {final_result} (Jackpot: {jackpot["amount"]})')
     save_points(points)
     save_jackpot(jackpot)
-    await ctx.send(f"{ctx.author.mention}, your balance after spinning: {points[user_id]} points! (Jackpot: {jackpot['amount']})")
+    await ctx.send(f"{ctx.author.mention}, your balance after spinning: {points[user_id]} points! (Net change: {amount_won} points) (Jackpot: {jackpot['amount']})")
 
 @wheel.error
 async def wheel_error(ctx, error):
