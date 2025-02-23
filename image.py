@@ -41,7 +41,6 @@ def update_user_points(user_id, new_points):
 # Create intents object and enable the necessary intents
 intents = discord.Intents.default()
 intents.messages = True  # Enable receiving messages
-
 client = discord.Client(intents=intents)  # Pass the intents to the client
 
 @client.event
@@ -52,47 +51,47 @@ async def on_ready():
 async def on_message(message):
     if message.author == client.user:
         return
-
     if message.content.startswith('!image'):
         user_id = str(message.author.id)
         required_points = 1000  # Points needed for image generation
         current_points = get_user_points(user_id)
-
         if current_points < required_points:
             await message.channel.send("You don't have enough points to generate an image.")
             return
-
         # Deduct points
         update_user_points(user_id, current_points - required_points)
-        
         prompt = message.content[len('!image '):].strip()
-        generated_image = await generate_image(prompt)
-
-        if generated_image:
-            # Save the image temporarily and send it
-            with tempfile.NamedTemporaryFile(delete=False, suffix='.png') as temp_file:
-                temp_file.write(generated_image)
-                file_path = temp_file.name
-            
-            try:
-                await message.channel.send(file=discord.File(fp=file_path))
-            finally:
-                os.remove(file_path)  # Clean up the temporary file
-        else:
-            # Refund points if image generation fails
-            update_user_points(user_id, current_points)
+        try:
+            generated_image = await generate_image(prompt)
+            if generated_image:
+                # Save the image temporarily and send it
+                with tempfile.NamedTemporaryFile(delete=False, suffix='.png') as temp_file:
+                    temp_file.write(generated_image)
+                    file_path = temp_file.name
+                try:
+                    await message.channel.send(file=discord.File(fp=file_path))
+                finally:
+                    os.remove(file_path)  # Clean up the temporary file
+            else:
+                raise Exception("Image generation failed.")
+        except Exception as e:
+            print(f"Error: {e}")
+            update_user_points(user_id, current_points)  # Refund points
             await message.channel.send("Failed to generate image. Your points have been refunded.")
 
 async def generate_image(prompt):
     async with aiohttp.ClientSession() as session:
         url = f"https://image.pollinations.ai/prompt/{prompt.replace(' ', '%20')}"
         print(f"Generating image with prompt: {prompt}")
-        
-        async with session.get(url) as response:
-            if response.status == 200:
-                return await response.read()
-            else:
-                print(f"Failed to generate image. Status code: {response.status}")
-                return None
+        try:
+            async with session.get(url) as response:
+                if response.status == 200:
+                    return await response.read()
+                else:
+                    print(f"Failed to generate image. Status code: {response.status}, Response: {await response.text()}")
+                    return None
+        except aiohttp.ClientError as e:
+            print(f"HTTP request failed: {e}")
+            return None
 
 client.run(TOKEN)
