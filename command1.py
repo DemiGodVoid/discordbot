@@ -2,6 +2,7 @@ import discord
 import json
 import os
 import asyncio
+import aiohttp
 
 # Set up bot intents
 intents = discord.Intents.default()
@@ -11,7 +12,6 @@ client = discord.Client(intents=intents)
 
 # Load or request bot token
 TOKEN_FILE = "token.txt"
-YOUTUBE_API_FILE = "youtube_api.txt"
 
 if os.path.exists(TOKEN_FILE):
     with open(TOKEN_FILE, "r") as f:
@@ -20,14 +20,6 @@ else:
     TOKEN = input("Please enter your Discord bot token: ").strip()
     with open(TOKEN_FILE, "w") as f:
         f.write(TOKEN)
-
-if os.path.exists(YOUTUBE_API_FILE):
-    with open(YOUTUBE_API_FILE, "r") as f:
-        YOUTUBE_API_KEY = f.read().strip()
-else:
-    YOUTUBE_API_KEY = input("Please enter your YouTube API key: ").strip()
-    with open(YOUTUBE_API_FILE, "w") as f:
-        f.write(YOUTUBE_API_KEY)
 
 # File paths
 TRIGGERS_FILE = "triggers.json"
@@ -62,6 +54,13 @@ def update_user_points(user_id, new_points):
 def update_taken_points(used_points):
     taken_points["total_taken_points"] = taken_points.get("total_taken_points", 0) + used_points
     save_data(TAKEN_POINTS_FILE, taken_points)
+
+async def generate_image(prompt):
+    async with aiohttp.ClientSession() as session:
+        async with session.get(f"https://image.pollinations.ai/prompt/{prompt}") as response:
+            if response.status == 200:
+                return response.url
+            return None
 
 @client.event
 async def on_ready():
@@ -110,6 +109,20 @@ async def on_message(message):
         embed.add_field(name="!image prompt", value="Generate an image (1000 points per image).", inline=False)
         embed.add_field(name="!chat prompt", value="Chat with GPT (500 points per chat).", inline=False)
         await message.channel.send(embed=embed)
+
+    if message.content.startswith('!image '):
+        user_id = str(message.author.id)
+        if get_user_points(user_id) >= 1000:
+            prompt = message.content[len('!image '):].strip()
+            image_url = await generate_image(prompt)
+            if image_url:
+                update_user_points(user_id, get_user_points(user_id) - 1000)
+                update_taken_points(1000)
+                await message.channel.send(f"Here is your generated image: {image_url}")
+            else:
+                await message.channel.send("Failed to generate image.")
+        else:
+            await message.channel.send("You do not have enough points.")
 
     if message.content == '!games':
         embed = discord.Embed(title="Bots Games", description="List of available games", color=discord.Color.green())
