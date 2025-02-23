@@ -3,12 +3,6 @@ import json
 import os
 import aiohttp
 import asyncio
-import tempfile
-
-# Set up bot intents
-intents = discord.Intents.default()
-intents.message_content = True
-client = discord.Client(intents=intents)
 
 # Load bot token
 TOKEN_FILE = "token.txt"
@@ -17,12 +11,9 @@ if os.path.exists(TOKEN_FILE):
         TOKEN = f.read().strip()
 else:
     TOKEN = input("Enter your Discord bot token: ").strip()
-    with open(TOKEN_FILE, "w") as f:
-        f.write(TOKEN)
 
 # File paths
 POINTS_FILE = "points.json"
-TAKEN_POINTS_FILE = "taken_points.json"
 
 # Load or create points data
 def load_data(file_path):
@@ -36,7 +27,6 @@ def save_data(file_path, data):
         json.dump(data, f, indent=4)
 
 points_data = load_data(POINTS_FILE)
-taken_points = load_data(TAKEN_POINTS_FILE)
 
 # Get user's current points
 def get_user_points(user_id):
@@ -47,25 +37,58 @@ def update_user_points(user_id, new_points):
     points_data[str(user_id)] = new_points
     save_data(POINTS_FILE, points_data)
 
-# Update total taken points
-def update_taken_points(used_points):
-    taken_points["total_taken_points"] = taken_points.get("total_taken_points", 0) + used_points
-    save_data(TAKEN_POINTS_FILE, taken_points)
+client = discord.Client()
 
-# Generate AI image using Pollinations AI with retry mechanism
-async def generate_image(prompt, retries=3):
+@client.event
+async def on_ready():
+    print(f'Logged in as {client.user}')
+
+@client.event
+async def on_message(message):
+    if message.author == client.user:
+        return
+
+    if message.content.startswith('!image'):
+        user_id = str(message.author.id)
+        required_points = 1000  # Points needed for image generation
+        current_points = get_user_points(user_id)
+
+        if current_points < required_points:
+            await message.channel.send("You don't have enough points to generate an image.")
+            return
+
+        # Deduct points
+        update_user_points(user_id, current_points - required_points)
+        
+        prompt = message.content[len('!image '):].strip()
+        generated_image = await generate_image(prompt)
+
+        if generated_image:
+            # Save the image temporarily and send it
+            with tempfile.NamedTemporaryFile(delete=False, suffix='.png') as temp_file:
+                temp_file.write(generated_image)
+                file_path = temp_file.name
+            
+            try:
+                await message.channel.send(file=discord.File(fp=file_path))
+            finally:
+                os.remove(file_path)  # Clean up the temporary file
+        else:
+            # Refund points if image generation fails
+            update_user_points(user_id, current_points)
+            await message.channel.send("Failed to generate image. Your points have been refunded.")
+
+async def generate_image(prompt):
     async with aiohttp.ClientSession() as session:
         url = f"https://image.pollinations.ai/prompt/{prompt.replace(' ', '%20')}"
         print(f"Generating image with prompt: {prompt}")
         
-        for attempt in range(retries):
-            async with session.get(url) as response:
-                if response.status == 200:
-                    return await response.read()  # Return the raw bytes of the image
-                else:
-                    print(f"Error generating image. Status code: {response.status}. Attempt {attempt+1}/{retries}")
-        
-        print("Failed to generate image after multiple attempts.")
-        return None
+        async with session.get(url) as response:
+            if response.status == 200:
+                return await response.read()
+            else:
+                print(f"Error generating image. Status code: {response.status}")
+    
+    return None
 
 client.run(TOKEN)
