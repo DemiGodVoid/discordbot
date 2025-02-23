@@ -41,16 +41,21 @@ current_card = None
 turn_index = 0
 points_in_pot = 0
 
+def reset_game():
+    global players, uno_hands, current_card, turn_index, points_in_pot
+    players.clear()
+    uno_hands.clear()
+    current_card = None
+    turn_index = 0
+    points_in_pot = 0
+
 @bot.event
 async def on_ready():
     print(f"Logged in as {bot.user}")
 
 @bot.command()
 async def start_uno(ctx):
-    global points_in_pot
-    players.clear()
-    uno_hands.clear()
-    points_in_pot = 0
+    reset_game()
     await ctx.send("Game mode set to 2 players! Use `.join` to enter.")
 
 @bot.command()
@@ -118,11 +123,12 @@ async def on_message(message):
             return
 
         valid_moves = [card for card in uno_hands[player] if card.startswith(current_card.split()[0]) or card.endswith(current_card.split()[1])]
+        content = message.content.lstrip(".")  # Ensure players must use "." before playing a card
         
-        if message.content in uno_hands[player]:
-            if message.content in valid_moves:
-                current_card = message.content
-                uno_hands[player].remove(message.content)
+        if content in uno_hands[player]:
+            if content in valid_moves:
+                current_card = content
+                uno_hands[player].remove(content)
                 await message.channel.send(f"{message.author.mention} played **{current_card}**!")
                 if not uno_hands[player]:
                     await handle_win(message.author, message.channel)
@@ -142,6 +148,6 @@ async def handle_win(winner, channel):
     points[str(winner.id)] = points.get(str(winner.id), 0) + points_in_pot
     save_points()
     await channel.send(f"{winner.mention} wins the game and takes {points_in_pot} points!")
-    points_in_pot = 0
+    reset_game()
 
 bot.run(token)
