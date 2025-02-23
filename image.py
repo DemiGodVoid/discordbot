@@ -60,7 +60,7 @@ async def generate_image(prompt, retries=3):
         for attempt in range(retries):
             async with session.get(url) as response:
                 if response.status == 200:
-                    return await response.text()  # Pollinations directly returns an image
+                    return await response.read()  # Return the raw bytes of the image
                 else:
                     print(f"Error generating image. Status code: {response.status}. Attempt {attempt+1}/{retries}")
             
@@ -84,10 +84,26 @@ async def on_message(message):
             await message.channel.send("Please provide a prompt after the command.")
             return
         
-        image_url = await generate_image(prompt)
-        if image_url:
-            await message.channel.send(f"Here is your AI-generated image:\n{image_url}")
+        # Deduct 1000 points from the user
+        user_id = str(message.author.id)
+        current_points = get_user_points(user_id)
+        if current_points < 1000:
+            await message.channel.send("You don't have enough points to generate an image. You need at least 1000 points.")
+            return
+        
+        new_points = current_points - 1000
+        update_user_points(user_id, new_points)
+        update_taken_points(1000)
+
+        # Generate and send the image
+        image_content = await generate_image(prompt)
+        if image_content:
+            # Send the image as a file attachment
+            await message.channel.send(file=discord.File(fp=image_content, filename="generated_image.png"))
+            await message.author.send(f"Successfully deducted 1000 points from your account. You now have {new_points} points remaining.")
         else:
-            await message.channel.send("❌ Image generation failed. Please try again later.")
+            update_user_points(user_id, current_points)  # Refund the points if image generation fails
+            update_taken_points(-1000)
+            await message.channel.send("❌ Unable to generate image. Please try again later.")
 
 client.run(TOKEN)
