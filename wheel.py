@@ -41,11 +41,13 @@ def save_jackpot(data):
     with open("jackpot.json", "w") as f:
         json.dump(data, f, indent=4)
 
+# Cooldown
 @bot.event
 async def on_ready():
     print(f'Logged in as {bot.user}')
 
 @bot.command()
+@commands.cooldown(1, 10, commands.BucketType.user)  # 10-second cooldown per user
 async def wheel(ctx):
     user_id = str(ctx.author.id)
     points = load_points()
@@ -67,10 +69,8 @@ async def wheel(ctx):
     await ctx.send(f"The new jackpot is now: {jackpot['amount']} points!")
 
     messages = [
-        f"Win {random.randint(50, 500)}! (Jackpot: {jackpot['amount']})",
-        f"Win {random.randint(500, 5000)}! (Jackpot: {jackpot['amount']})",
-        f"Lose {random.randint(1000, 5000)} (Jackpot: {jackpot['amount']})",
-        f"Jackpot: {jackpot['amount']}"
+        f"Win {random.randint(1, 600)}! (Jackpot: {jackpot['amount']})",
+        f"Lose {random.randint(1, 600)} (Jackpot: {jackpot['amount']})"
     ]
     
     msg = await ctx.send(messages[0])
@@ -86,7 +86,7 @@ async def wheel(ctx):
         points[user_id] += jackpot["amount"]
         jackpot["amount"] = 0  # Reset jackpot after win
     else:
-        final_result = random.choice(messages[:-1])
+        final_result = random.choice(messages)
         amount = int(''.join(filter(str.isdigit, final_result)))
         if "Lose" in final_result:
             points[user_id] -= amount
@@ -97,5 +97,10 @@ async def wheel(ctx):
     save_points(points)
     save_jackpot(jackpot)
     await ctx.send(f"{ctx.author.mention}, your new balance is: {points[user_id]} points! (Jackpot: {jackpot['amount']})")
+
+@wheel.error
+async def wheel_error(ctx, error):
+    if isinstance(error, commands.CommandOnCooldown):
+        await ctx.send(f"{ctx.author.mention}, you must wait {error.retry_after:.1f} seconds before spinning again!")
 
 bot.run(load_token())
