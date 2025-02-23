@@ -22,6 +22,7 @@ else:
 POINTS_FILE = "points.json"
 TAKEN_POINTS_FILE = "taken_points.json"
 
+# Load or create points data
 def load_data(file_path):
     if os.path.exists(file_path):
         with open(file_path, "r") as f:
@@ -35,35 +36,49 @@ def save_data(file_path, data):
 points_data = load_data(POINTS_FILE)
 taken_points = load_data(TAKEN_POINTS_FILE)
 
+# Get user's current points
 def get_user_points(user_id):
     return points_data.get(str(user_id), 0)
 
+# Update user's points
 def update_user_points(user_id, new_points):
-    global points_data
     points_data[str(user_id)] = new_points
-    save_data(POINTS_FILE, points_data)  # Ensure it is saved properly
+    save_data(POINTS_FILE, points_data)
 
+# Update total taken points
 def update_taken_points(used_points):
-    global taken_points
     taken_points["total_taken_points"] = taken_points.get("total_taken_points", 0) + used_points
     save_data(TAKEN_POINTS_FILE, taken_points)
 
+# Image Generation Function (Now Using Lexica AI)
 async def generate_image(prompt):
     async with aiohttp.ClientSession() as session:
-        async with session.get(f"https://image.pollinations.ai/prompt/{prompt}") as response:
+        url = "https://lexica.art/api/v1/search?q=" + prompt  # Lexica AI search API
+        async with session.get(url) as response:
+            response_text = await response.text()
+            print(f"API Response: {response_text}")  # Debugging output
+
             if response.status == 200:
                 try:
-                    data = await response.json()
-                    return data.get("url", None)
-                except Exception:
+                    data = json.loads(response_text)  # Convert response to JSON
+                    images = data.get("images", [])
+                    if images:
+                        return images[0]["src"]  # Return the first image URL
+                    else:
+                        return None
+                except Exception as e:
+                    print(f"JSON Parsing Error: {e}")  # Log parsing errors
                     return None
             else:
+                print(f"API Request Failed with Status: {response.status}")  # Log failure
                 return None
 
+# Bot ready event
 @client.event
 async def on_ready():
-    print(f'We have logged in as {client.user}')
+    print(f'✅ Logged in as {client.user}')
 
+# Message command handling
 @client.event
 async def on_message(message):
     if message.author == client.user:
@@ -75,12 +90,14 @@ async def on_message(message):
         
         if current_points >= 1000:
             prompt = message.content[len('!image '):].strip()
+            await message.channel.send("⏳ Generating your image, please wait...")
+
             image_url = await generate_image(prompt)
-            
+
             if image_url:
                 update_user_points(user_id, current_points - 1000)
                 update_taken_points(1000)
-                await message.channel.send(f"✅ Successfully deducted 1000 points.\nHere is your generated image: {image_url}")
+                await message.channel.send(f"✅ Successfully deducted 1000 points.\nHere is your generated image:", file=discord.File(image_url))
             else:
                 await message.channel.send("❌ Failed to generate image. Please try again later.")
         else:
