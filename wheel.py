@@ -60,13 +60,16 @@ async def wheel(ctx):
         await ctx.send(f"{ctx.author.mention}, you don't have enough points to spin the wheel! Come back when you have at least 500.")
         return
 
+    # Show user's balance before spinning
+    starting_balance = points[user_id]
+    
     # Deduct 500 points and add to the jackpot
     points[user_id] -= 500
     jackpot["amount"] += 500
     save_points(points)
     save_jackpot(jackpot)
 
-    await ctx.send(f"The new jackpot is now: {jackpot['amount']} points!")
+    await ctx.send(f"{ctx.author.mention}, your balance before spinning: {starting_balance} points. The new jackpot is now: {jackpot['amount']} points!")
 
     messages = [
         f"Win {random.randint(1, 600)}! (Jackpot: {jackpot['amount']})",
@@ -96,7 +99,7 @@ async def wheel(ctx):
     await msg.edit(content=f'Final Result: {final_result} (Jackpot: {jackpot["amount"]})')
     save_points(points)
     save_jackpot(jackpot)
-    await ctx.send(f"{ctx.author.mention}, your new balance is: {points[user_id]} points! (Jackpot: {jackpot['amount']})")
+    await ctx.send(f"{ctx.author.mention}, your balance after spinning: {points[user_id]} points! (Jackpot: {jackpot['amount']})")
 
 @wheel.error
 async def wheel_error(ctx, error):
