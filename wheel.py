@@ -26,6 +26,7 @@ def load_token():
 
 intents = discord.Intents.default()
 intents.messages = True  # Ensures bot can read and send messages
+intents.message_content = True  # Enables reading message content
 bot = commands.Bot(command_prefix=".", intents=intents)
 
 @bot.event
