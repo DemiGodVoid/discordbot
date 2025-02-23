@@ -50,27 +50,23 @@ def update_taken_points(used_points):
     taken_points["total_taken_points"] = taken_points.get("total_taken_points", 0) + used_points
     save_data(TAKEN_POINTS_FILE, taken_points)
 
-# Image Generation Function (Now Using Lexica AI)
+# Image Generation using Craiyon AI (No API Key Required)
 async def generate_image(prompt):
     async with aiohttp.ClientSession() as session:
-        url = "https://lexica.art/api/v1/search?q=" + prompt  # Lexica AI search API
-        async with session.get(url) as response:
-            response_text = await response.text()
-            print(f"API Response: {response_text}")  # Debugging output
+        url = "https://backend.craiyon.com/generate"
+        payload = {"prompt": prompt}
 
+        async with session.post(url, json=payload) as response:
             if response.status == 200:
                 try:
-                    data = json.loads(response_text)  # Convert response to JSON
-                    images = data.get("images", [])
-                    if images:
-                        return images[0]["src"]  # Return the first image URL
-                    else:
-                        return None
+                    data = await response.json()
+                    image_url = f"https://img.craiyon.com/{data['images'][0]}"  # Get the first generated image
+                    return image_url
                 except Exception as e:
-                    print(f"JSON Parsing Error: {e}")  # Log parsing errors
+                    print(f"JSON Parsing Error: {e}")  # Debugging error
                     return None
             else:
-                print(f"API Request Failed with Status: {response.status}")  # Log failure
+                print(f"API Request Failed with Status: {response.status}")  # Debugging failure
                 return None
 
 # Bot ready event
