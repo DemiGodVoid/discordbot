@@ -68,7 +68,8 @@ async def generate_image(prompt):
     async with aiohttp.ClientSession() as session:
         async with session.get(f"https://image.pollinations.ai/prompt/{prompt}") as response:
             if response.status == 200:
-                return response.url
+                data = await response.json()
+                return data.get("url", None)
             return None
 
 def search_youtube(query):
@@ -117,14 +118,14 @@ async def on_message(message):
 
     if message.content == '!commands2':
         embed = discord.Embed(title="More Commands", description="Additional fun and utility commands", color=discord.Color.blue())
-        embed.add_field(name="!youtube <title>", value="Search for a YouTube video.", inline=False)
-        embed.add_field(name="!image <prompt>", value="Generate an image (1000 points per image).", inline=False)
+        embed.add_field(name="!youtube title - name", value="Search for a YouTube video.", inline=False)
+        embed.add_field(name="!image prompt", value="Generate an image (1000 points per image).", inline=False)
         await message.channel.send(embed=embed)
 
     if message.content == '!games':
         embed = discord.Embed(title="Bot Games", description="List of available games", color=discord.Color.green())
         embed.add_field(name="!connect4", value="Play Connect 4! Win points", inline=False)
-        embed.add_field(name="!roll <amount>", value="Gamble points.", inline=False)
+        embed.add_field(name="!roll amount", value="Gamble points.", inline=False)
         embed.add_field(name="!bal", value="Check your points.", inline=False)
         embed.add_field(name="!points", value="See all points.", inline=False)
         embed.add_field(name="!giveaway", value="Giveaway points.", inline=False)
@@ -133,16 +134,24 @@ async def on_message(message):
 
     if message.content.startswith('!image '):
         user_id = str(message.author.id)
-        if get_user_points(user_id) >= 1000:
+        current_points = get_user_points(user_id)
+        print(f"User {user_id} has {current_points} points.")
+        
+        if current_points >= 1000:
             prompt = message.content[len('!image '):].strip()
+            print(f"Generating image for prompt: {prompt}")
             image_url = await generate_image(prompt)
+            
             if image_url:
-                update_user_points(user_id, get_user_points(user_id) - 1000)
+                update_user_points(user_id, current_points - 1000)
                 update_taken_points(1000)
+                print(f"Image generated: {image_url}")
                 await message.channel.send(f"Here is your generated image: {image_url}")
             else:
+                print("Image generation failed.")
                 await message.channel.send("Failed to generate image.")
         else:
+            print("User does not have enough points.")
             await message.channel.send("You do not have enough points.")
 
     if message.content.startswith('!youtube '):
