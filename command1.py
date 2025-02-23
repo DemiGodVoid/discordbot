@@ -97,10 +97,14 @@ async def on_message(message):
         await message.channel.send('PONG')
 
     if message.content == '!commands':
-        await message.channel.send(
-            'Commands:\n\n!ping\n\n!gif message (send a related GIF)\n\n'
-            '!trigger message=message (set a trigger response)\n\n'
-            '!set_rules message (set server rules)\n\n!rules (view server rules)\n\n!commands2 (More commands)'
+        embed = discord.Embed(title="Commands", description="List of available commands", color=discord.Color.blue())
+        embed.add_field(name="!ping", value="See if bots online.", inline=False)
+        embed.add_field(name="!gif message", value="Send a gif message.", inline=False)
+        embed.add_field(name="!trigger message=message", value="Create a trigger response!.", inline=False)
+        embed.add_field(name="!set_rules message", value="Set server Rules", inline=False)
+        embed.add_field(name="!rules", value="View server Rules", inline=False)
+        embed.add_field(name="!commands2", value="View more commands(fun ones too!", inline=False)
+        await message.channel.send(embed=embed)
         )
 
     if message.content == '!commands2':
