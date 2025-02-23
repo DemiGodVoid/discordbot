@@ -105,7 +105,7 @@ async def on_message(message):
         embed.add_field(name="!rules", value="View server Rules", inline=False)
         embed.add_field(name="!commands2", value="View more commands(fun ones too!", inline=False)
         await message.channel.send(embed=embed)
-        )
+        
 
     if message.content == '!commands2':
         embed = discord.Embed(title="Commands", description="List of available commands", color=discord.Color.blue())
