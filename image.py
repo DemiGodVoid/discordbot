@@ -3,6 +3,7 @@ import json
 import os
 import aiohttp
 import asyncio
+import tempfile
 
 # Load bot token
 TOKEN_FILE = "token.txt"
@@ -37,7 +38,11 @@ def update_user_points(user_id, new_points):
     points_data[str(user_id)] = new_points
     save_data(POINTS_FILE, points_data)
 
-client = discord.Client()
+# Create intents object and enable the necessary intents
+intents = discord.Intents.default()
+intents.messages = True  # Enable receiving messages
+
+client = discord.Client(intents=intents)  # Pass the intents to the client
 
 @client.event
 async def on_ready():
@@ -87,8 +92,7 @@ async def generate_image(prompt):
             if response.status == 200:
                 return await response.read()
             else:
-                print(f"Error generating image. Status code: {response.status}")
-    
-    return None
+                print(f"Failed to generate image. Status code: {response.status}")
+                return None
 
 client.run(TOKEN)
