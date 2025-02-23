@@ -126,8 +126,9 @@ async def on_message(message):
 
     if message.content == '!games':
         embed = discord.Embed(title="Bots Games", description="List of available games", color=discord.Color.green())
-        embed.add_field(name="!connect4", value="Play Connect 4!", inline=False)
-        embed.add_field(name=".wheel", value="Spin the wheel!", inline=False)
+        embed.add_field(name="!connect4", value="Play Connect 4! win points", inline=False)
+        embed.add_field(name=".slap_jack", value="Cost 50k points to play! (.slap_help for help", inline=False)
+        embed.add_field(name=".wheel", value="Spin the wheel and win the jackpot!", inline=False)
         embed.add_field(name=".start_uno", value="Play Uno!", inline=False)
         embed.add_field(name="!roll amount", value="Gamble points.", inline=False)
         embed.add_field(name="!bal", value="Check your points.", inline=False)
