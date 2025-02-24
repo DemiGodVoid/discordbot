@@ -13,8 +13,6 @@ bot = commands.Bot(command_prefix='!', intents=intents)
 
 points_file = 'points.json'
 active_game = False
-players = []
-bets = {}
 deck = []
 
 def load_points():
@@ -59,70 +57,45 @@ async def on_ready():
 
 @bot.command()
 async def blackjack(ctx):
-    global active_game, players, bets
+    global active_game
     if active_game:
         await ctx.send("A game is already in progress!")
         return
     active_game = True
-    players = []
-    bets = {}
-    await ctx.send("Starting blackjack! Say .one for player one and .two for player two.")
-
-@bot.command()
-async def one(ctx):
-    global players
-    if active_game and len(players) < 1:
-        players.append(ctx.author)
-        await ctx.send(f"{ctx.author.mention} joined as Player 1!")
-
-@bot.command()
-async def two(ctx):
-    global players
-    if active_game and len(players) == 1:
-        players.append(ctx.author)
-        await ctx.send(f"{ctx.author.mention} joined as Player 2!")
-        await ctx.send(f"{players[0].mention}, enter your bet amount!")
+    await ctx.send(f"{ctx.author.mention}, enter your bet amount!")
 
 @bot.command()
 async def bet(ctx, amount: int):
-    global players, bets
-    if ctx.author not in players or ctx.author in bets:
-        return
+    global active_game
     points = load_points()
     if str(ctx.author.id) not in points or points[str(ctx.author.id)] < amount:
         await ctx.send(f"{ctx.author.mention}, you don't have enough points!")
+        active_game = False
         return
-    bets[ctx.author] = amount
     points[str(ctx.author.id)] -= amount
     save_points(points)
-    await ctx.send(f"{ctx.author.mention} bet {amount} points!")
-    if len(bets) == 2:
-        total_bet = sum(bets.values())
-        await ctx.send(f"Total bet pool: {total_bet} points. Dealing cards!")
-        await start_game()
+    total_pot = amount * 2
+    await ctx.send(f"Bet placed: {amount} points. Potential winnings: {total_pot} points. Dealing cards!")
+    await start_game(ctx, amount, total_pot)
 
-async def start_game():
+async def start_game(ctx, bet, total_pot):
     shuffle_deck()
-    hands = {players[0]: deal_hand(), players[1]: deal_hand()}
-    for player, hand in hands.items():
-        cards = ', '.join(f"{card['rank']} of {card['suit']}" for card in hand)
-        await player.send(f"Your hand: {cards}")
-    await bot.get_channel(players[0].guild.id).send("Cards dealt! Check your DMs!")
-    await determine_winner(hands)
+    player_hand = deal_hand()
+    dealer_hand = deal_hand()
+    await ctx.author.send(f"Your hand: {', '.join(f'{card['rank']} of {card['suit']}' for card in player_hand)}")
+    await ctx.send("Cards dealt! Check your DMs!")
+    await determine_winner(ctx, player_hand, dealer_hand, bet, total_pot)
 
-async def determine_winner(hands):
+async def determine_winner(ctx, player_hand, dealer_hand, bet, total_pot):
     global active_game
-    values = {player: hand_value(hand) for player, hand in hands.items()}
-    winner = max(values, key=values.get) if values[players[0]] != values[players[1]] else None
+    player_value = hand_value(player_hand)
+    dealer_value = hand_value(dealer_hand)
     points = load_points()
-    if winner:
-        total_bet = sum(bets.values())
-        points[str(winner.id)] += total_bet
-        await bot.get_channel(players[0].guild.id).send(f"{winner.mention} wins and gets {total_bet} points!")
+    if player_value > dealer_value or dealer_value > 21:
+        points[str(ctx.author.id)] += total_pot
+        await ctx.send(f"{ctx.author.mention} wins! You receive {total_pot} points!")
     else:
-        await bot.get_channel(players[0].guild.id).send("It's a tie! Bets are returned.")
-        for player, bet in bets.items():
-            points[str(player.id)] += bet
+        await ctx.send(f"{ctx.author.mention} lost! Better luck next time.")
     save_points(points)
     active_game = False
 
