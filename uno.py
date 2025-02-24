@@ -104,8 +104,13 @@ async def draw(ctx):
         return
     new_card = deck.pop()
     uno_hands[player].append(new_card)
-    await send_hands()
-    await ctx.send(f"{player.mention}, you drew **{new_card}**!")
+    
+    # DM the player the drawn card
+    await player.send(f"You drew **{new_card}**!")
+    await send_hands()  # Update their hand privately
+    
+    # Announce draw without revealing the card
+    await ctx.send(f"{player.mention}, you have drawn a card!")
 
 @bot.event
 async def on_message(message):
@@ -133,13 +138,13 @@ async def on_message(message):
                 if not uno_hands[player]:
                     await handle_win(message.author, message.channel)
                     return
+                
+                # Move to next turn
+                turn_index = (turn_index + 1) % 2
+                await send_hands()
+                await message.channel.send(f"{players[turn_index].mention}, it's your turn!")
             else:
-                await bot.get_command("draw").invoke(await bot.get_context(message))
-                return
-            
-            turn_index = (turn_index + 1) % 2
-            await send_hands()
-            await message.channel.send(f"{players[turn_index].mention}, it's your turn!")
+                await message.channel.send("You can't play that card! Play a valid one or draw.")
         else:
             await message.channel.send("You don't have that card in your hand!")
 
