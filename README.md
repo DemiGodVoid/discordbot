@@ -2,7 +2,14 @@ This is a normal discord bot with a built-in gpt model to help it chat with disc
 -
 Model used: cohere 
 -
-NEW: FEB/22ND/2025
+NEW: FEB/24TH/2025
+-
+UPDATED: Commands, Blackjack, uno, roll.
+-
+ADDED: Search engine, easier find results!
+-
+-
+OLD: FEB/22ND/2025
 -
 ADDED: UNO game & SlapJack game which requires points to play!
 -
