@@ -4,9 +4,8 @@ import os
 import googleapiclient.discovery
 
 # Set up bot intents
-intents = discord.Intents.default()
-intents.message_content = True
-intents.members = True
+intents = discord.Intents.default()                                                                                                                                                 intents.message_content = True
+intents.members = True  # Ensures the bot can detect member joins
 client = discord.Client(intents=intents)
 
 # Load or request bot token
@@ -53,7 +52,7 @@ def search_youtube(query):
     youtube = googleapiclient.discovery.build("youtube", "v3", developerKey=YOUTUBE_API_KEY)
     request = youtube.search().list(q=query, part="snippet", type="video", maxResults=1)
     response = request.execute()
-    
+
     if "items" in response and len(response["items"]) > 0:
         video_id = response["items"][0]["id"]["videoId"]
         return f"https://www.youtube.com/watch?v={video_id}"
@@ -62,6 +61,25 @@ def search_youtube(query):
 @client.event
 async def on_ready():
     print(f'We have logged in as {client.user}')
+
+@client.event                                                                                                                                                                       async def on_member_join(member):
+    """ Sends the rules when a new member joins """
+    guild_id = str(member.guild.id)
+
+    if guild_id in rules and rules[guild_id]:
+        rule_text = f"**Welcome {member.mention}!**\n\n**Server Rules:**\n{rules[guild_id]}"
+    else:
+        rule_text = f"**Welcome {member.mention}!**\nNo rules have been set for this server."
+
+    # Try to send to the system channel (usually the welcome channel)
+    if member.guild.system_channel and member.guild.system_channel.permissions_for(member.guild.me).send_messages:
+        await member.guild.system_channel.send(rule_text)
+    else:
+        # Otherwise, find the first available text channel where the bot has permission
+        for channel in member.guild.text_channels:
+            if channel.permissions_for(member.guild.me).send_messages:
+                await channel.send(rule_text)
+                break
 
 @client.event
 async def on_message(message):
@@ -96,6 +114,9 @@ async def on_message(message):
     if message.content == '!commands2':
         embed = discord.Embed(title="More Commands", description="Additional fun and utility commands", color=discord.Color.blue())
         embed.add_field(name="!youtube title - name", value="Search for a YouTube video.", inline=False)
+        embed.add_field(name="!search prompt", value="Use the bots search engine! cost 500 points", inline=False)
+        embed.add_field(name="!chat prompt", value="Chat with the bots gpt mindset! cost 500 points.", inline=False)
+        embed.add_field(name="!image prompt", value="Make the bot generate an image! cost 1k points.", inline=False)
         await message.channel.send(embed=embed)
 
     if message.content == '!games':
