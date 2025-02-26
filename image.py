@@ -17,37 +17,38 @@ else:
 POINTS_FILE = "points.json"
 TAKEN_POINTS_FILE = "taken_points.json"
 
-# Load or create points data
+# Load JSON data (always fresh)
 def load_data(file_path):
     if os.path.exists(file_path):
         with open(file_path, "r") as f:
             return json.load(f)
-    return {"total_taken_points": 0}
+    return {}  # Default empty dict if file is missing
 
+# Save JSON data
 def save_data(file_path, data):
     with open(file_path, "w") as f:
         json.dump(data, f, indent=4)
 
-points_data = load_data(POINTS_FILE)
-taken_points_data = load_data(TAKEN_POINTS_FILE)
-
-# Get user's current points
+# Get user's current points (ALWAYS fetch latest data)
 def get_user_points(user_id):
-    return points_data.get(str(user_id), 0)
+    points_data = load_data(POINTS_FILE)  # Reload fresh
+    return points_data.get(str(user_id), 0)  # Default to 0 if user has no entry
 
-# Update user's points
+# Update user's points (ALWAYS reload before modifying)
 def update_user_points(user_id, new_points):
-    points_data[str(user_id)] = new_points
-    save_data(POINTS_FILE, points_data)
+    points_data = load_data(POINTS_FILE)  # Reload fresh data
+    points_data[str(user_id)] = new_points  # Update user's balance
+    save_data(POINTS_FILE, points_data)  # Save updated data
 
-# Track deducted points
+# Track deducted points (ALWAYS reload before modifying)
 def update_taken_points(points):
-    taken_points_data["total_taken_points"] += points
-    save_data(TAKEN_POINTS_FILE, taken_points_data)
+    taken_points_data = load_data(TAKEN_POINTS_FILE)  # Reload fresh
+    taken_points_data["total_taken_points"] = taken_points_data.get("total_taken_points", 0) + points
+    save_data(TAKEN_POINTS_FILE, taken_points_data)  # Save updated data
 
 # Enable required intents
 intents = discord.Intents.default()
-intents.message_content = True  # Ensure bot can read message content
+intents.message_content = True  # Ensure bot can read messages
 client = discord.Client(intents=intents)
 
 @client.event
@@ -62,6 +63,8 @@ async def on_message(message):
     if message.content.lower().startswith('!image'):
         user_id = str(message.author.id)
         required_points = 1000
+
+        # Always read fresh points
         current_points = get_user_points(user_id)
 
         if current_points < required_points:
@@ -69,11 +72,11 @@ async def on_message(message):
             return
 
         # Deduct points and track taken points
-        update_user_points(user_id, current_points - required_points)
+        new_balance = current_points - required_points
+        update_user_points(user_id, new_balance)
         update_taken_points(required_points)
-        save_data(TAKEN_POINTS_FILE, taken_points_data)
 
-        await message.channel.send(f"✅ 1000 points have been deducted from your account. Remaining balance: {get_user_points(user_id)} points.")
+        await message.channel.send(f"✅ 1000 points have been deducted from your account. Remaining balance: {new_balance} points.")
 
         prompt = message.content[len('!image '):].strip()
         await message.channel.send(f"Generating your image for: **{prompt}** ...")
