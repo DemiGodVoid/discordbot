@@ -31,6 +31,18 @@ def save_points(points):
     with open("points.json", "w") as f:
         json.dump(points, f)
 
+# Load taken points from taken_points.json or create an empty one
+def load_taken_points():
+    try:
+        with open("taken_points.json", "r") as f:
+            return json.load(f)
+    except FileNotFoundError:
+        return {"total_taken_points": 0}
+
+def save_taken_points(taken_points):
+    with open("taken_points.json", "w") as f:
+        json.dump(taken_points, f)
+
 # Command: !roll <amount>
 @bot.command()
 @commands.cooldown(1, 60, commands.BucketType.user)  # 1 use per 60 seconds per user
@@ -44,6 +56,9 @@ async def roll(ctx, amount: int):
         await ctx.send(f"You don't have enough points! You currently have {current_points} points.")
         return
 
+    # Load the taken points from taken_points.json
+    taken_points = load_taken_points()
+
     # 50/50 win/loss
     if random.choice([True, False]):
         # User wins: double the bet
@@ -53,10 +68,12 @@ async def roll(ctx, amount: int):
     else:
         # User loses: lose the bet
         user_points[user_id] = current_points - amount
+        taken_points["total_taken_points"] += amount  # Add lost points to the total taken points
         await ctx.send(f"You gambled {amount} points and **lost**! You lost {amount} points. Total: {user_points[user_id]} points.")
     
-    # Save updated points
+    # Save updated points and taken points
     save_points(user_points)
+    save_taken_points(taken_points)
 
 # Command: !spin
 @bot.command()
