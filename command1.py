@@ -106,6 +106,7 @@ async def on_message(message):
     if message.content == '!commands':
         embed = discord.Embed(title="Commands", description="List of available commands", color=discord.Color.blue())
         embed.add_field(name="!rules", value="View server Rules", inline=False)
+        embed.add_field(name="!roles", value="Let users pick thier own roles.(Hides Admin roles/Owner roles and bot roles.)", inline=False)
         embed.add_field(name="!set_rules", value="Set server Rules (Admin only)", inline=False)
         embed.add_field(name="!games", value="List available games", inline=False)
         embed.add_field(name="!commands2", value="View more commands", inline=False)
