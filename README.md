@@ -2,7 +2,12 @@ This is a normal discord bot with a built-in gpt model to help it chat with disc
 -
 Model used: cohere 
 -
-NEW: FEB/24TH/2025
+NEW: FEB/26th/2025
+-
+ADDED: !roles command (Allow server members to see roles (BESIDES: Admin/Owner/Bot roles) 
+-
+-
+OLD: FEB/24TH/2025
 -
 UPDATED: Commands, Blackjack, uno, roll.
 -
