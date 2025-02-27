@@ -124,10 +124,10 @@ async def on_message(message):
         embed.add_field(name="!connect4", value="Play Connect 4! Win points", inline=False)
         embed.add_field(name="!blackjack", value="Play blackjack and bet your points.", inline=False)
         embed.add_field(name=".start_uno", value="Play uno!(Cast your bets and win!).", inline=False)
+        embed.add_field(name=".wheel", value="Spin the wheel and win the jackpot(takes 500 points).", inline=False)
         embed.add_field(name="!roll amount", value="Gamble points.", inline=False)
         embed.add_field(name="!bal", value="Check your points.", inline=False)
         embed.add_field(name="!points", value="See all points.", inline=False)
-        embed.add_field(name="!giveaway", value="Giveaway points.", inline=False)
         embed.add_field(name="!taken", value="Total spent points.", inline=False)
         await message.channel.send(embed=embed)
 
