@@ -116,6 +116,7 @@ async def on_message(message):
     if message.content == '!commands2':
         embed = discord.Embed(title="More Commands", description="Additional fun and utility commands", color=discord.Color.blue())
         embed.add_field(name="!youtube title - name", value="Search for a YouTube video.", inline=False)
+        embed.add_field(name="!shop", value="View the bots shop!", inline=False)
         embed.add_field(name="!search prompt", value="Use the bots search engine! cost 500 points", inline=False)
         embed.add_field(name="!chat prompt", value="Chat with the bots gpt mindset! cost 500 points.", inline=False)
         embed.add_field(name="!image prompt", value="Make the bot generate an image! cost 1k points.", inline=False)
