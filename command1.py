@@ -4,9 +4,9 @@ import os
 import googleapiclient.discovery
 
 # Set up bot intents
+intents = discord.Intents.default()
 intents.message_content = True
-intents = discord.Intents.default() 
-intents.members = True  # Ensures the bot can detect member joins
+intents.members = True
 client = discord.Client(intents=intents)
 
 # Load or request bot token
@@ -62,8 +62,8 @@ def search_youtube(query):
 @client.event
 async def on_ready():
     print(f'We have logged in as {client.user}')
-
-@client.event                                                                                                                                                                       async def on_member_join(member):
+@client.event
+async def on_member_join(member):
     """ Sends the rules when a new member joins """
     guild_id = str(member.guild.id)
 
