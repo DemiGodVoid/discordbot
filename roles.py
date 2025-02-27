@@ -17,7 +17,7 @@ async def on_ready():
 @bot.command()
 async def roles(ctx):
     embed = Embed(title="Available Roles", description="Tap to receive a role!", color=discord.Color.blue())
-    roles = [role for role in ctx.guild.roles if not any(bad in role.name.lower() for bad in ["admin", "bot", "owner"])]
+    roles = [role for role in ctx.guild.roles if not any(bad in role.name.lower() for bad in ["admin", "bot", "owner"]) and role.name != "@everyone"]
 
     if not roles:
         await ctx.send("No available roles to display.")
@@ -28,7 +28,7 @@ async def roles(ctx):
 
     message = await ctx.send(embed=embed)
 
-    for role in roles:
+    for _ in roles:
         await message.add_reaction("🔘")
 
     def check(reaction, user):
@@ -37,12 +37,12 @@ async def roles(ctx):
     while True:
         try:
             reaction, user = await bot.wait_for("reaction_add", timeout=60.0, check=check)
-            for role in roles:
-                if str(reaction.emoji) == "🔘":
-                    await user.add_roles(role)
-                    await ctx.send(f"{user.mention} You have been given the **{role.name}** role!")
-                    return
-        except Exception:
+            role_index = list(reaction.message.reactions).index(reaction)
+            role = roles[role_index]
+            await user.add_roles(role)
+            await ctx.send(f"{user.mention} You have been given the **{role.name}** role!")
+            return
+        except (Exception, IndexError):
             break
 
     await ctx.send("Role selection timed out.")
