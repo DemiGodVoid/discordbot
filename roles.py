@@ -37,18 +37,18 @@ async def roles(ctx):
         await message.add_reaction(emoji)
 
     def check(reaction, user):
-        return user == ctx.author and str(reaction.emoji) in role_emoji_map and reaction.message.id == message.id
+        return user != bot.user and str(reaction.emoji) in role_emoji_map and reaction.message.id == message.id
 
     while True:
         try:
-            reaction, user = await bot.wait_for("reaction_add", timeout=60.0, check=check)
+            reaction, user = await bot.wait_for("reaction_add", check=check)
             role = role_emoji_map[str(reaction.emoji)]
             await user.add_roles(role)
-            await ctx.send(f"{user.mention} You have been given the **{role.name}** role!")
-        except Exception:
-            break
-
-    await ctx.send("Role selection timed out.")
+            confirm_message = await ctx.send(f"{user.mention} You have been given the **{role.name}** role!")
+            await discord.utils.sleep_until(discord.utils.utcnow() + discord.utils.timedelta(seconds=60))
+            await confirm_message.delete()
+        except Exception as e:
+            print(f"Error: {e}")
 
 with open("token.txt", "r") as file:
     TOKEN = file.read().strip()
