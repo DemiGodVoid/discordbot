@@ -6,6 +6,8 @@ NEW: FEB/26th/2025
 -
 ADDED: !roles command (Allow server members to see roles (BESIDES: Admin/Owner/Bot roles) 
 -
+UPDATED: roll(every lost on a roll sends the lost points fo taken_points.json , say !taken to sss the taken points from All users from every server your bots in)
+-
 -
 OLD: FEB/24TH/2025
 -
