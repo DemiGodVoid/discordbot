@@ -27,5 +27,10 @@ async def shop(ctx):
     # Send the embed message to the channel
     await ctx.send(embed=embed)
 
+# Load the bot token from token.txt
+def get_bot_token():
+    with open("token.txt", "r") as file:
+        return file.read().strip()
+
 # Run the bot
-bot.run('YOUR_BOT_TOKEN')
+bot.run(get_bot_token())
