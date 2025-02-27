@@ -4,7 +4,8 @@ import os
 import googleapiclient.discovery
 
 # Set up bot intents
-intents = discord.Intents.default()                                                                                                                                                 intents.message_content = True
+intents.message_content = True
+intents = discord.Intents.default() 
 intents.members = True  # Ensures the bot can detect member joins
 client = discord.Client(intents=intents)
 
