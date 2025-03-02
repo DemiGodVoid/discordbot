@@ -109,6 +109,7 @@ async def on_message(message):
         embed.add_field(name="!rules", value="View server Rules", inline=False)
         embed.add_field(name="!roles", value="Let users pick thier own roles.(Hides Admin roles/Owner roles and bot roles.)", inline=False)
         embed.add_field(name="!set_rules", value="Set server Rules (Admin only)", inline=False)
+        embed.add_field(name="!confess", value="DM me !confess MESSAGE to anonymously confess to a server!", inline=False)
         embed.add_field(name="!games", value="List available games", inline=False)
         embed.add_field(name="!commands2", value="View more commands", inline=False)
         await message.channel.send(embed=embed)
