@@ -41,14 +41,23 @@ async def confess(ctx, *, confession: str):
         selected = int(msg.content) - 1
         if 0 <= selected < len(servers):
             selected_server = servers[selected]
-            channel = last_channel_per_server.get(selected_server.id)
-            if channel:
-                await channel.send(f"From anon person: {confession}")
+            channels = [channel for channel in selected_server.text_channels if channel.permissions_for(selected_server.me).send_messages][:4]
+            channel_list = "\n".join([f"{index+1}. {channel.name}" for index, channel in enumerate(channels)])
+            if not channels:
+                await ctx.send("No accessible text channels in the selected server.")
+                return
+
+            await ctx.send(f"Select a channel to send your confession to by replying with the number:\n{channel_list}")
+
+            msg = await bot.wait_for('message', check=check, timeout=30.0)
+            selected_channel = int(msg.content) - 1
+            if 0 <= selected_channel < len(channels):
+                await channels[selected_channel].send(f"From anon person: {confession}")
                 await ctx.send("Confession sent!")
             else:
-                await ctx.send("No recent messages in that server, confession not sent.")
+                await ctx.send("Invalid channel number.")
         else:
-            await ctx.send("Invalid number.")
+            await ctx.send("Invalid server number.")
     except TimeoutError:
         await ctx.send("You took too long to respond.")
 
