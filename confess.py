@@ -19,7 +19,8 @@ async def on_ready():
 async def on_message(message):
     if message.author == bot.user:
         return
-    last_channel_per_server[message.guild.id] = message.channel
+    if message.guild:
+        last_channel_per_server[message.guild.id] = message.channel
     await bot.process_commands(message)
 
 @bot.command()
