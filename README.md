@@ -5,6 +5,7 @@ Model used: cohere
 NEW: MARCH/1st/2025
 -
 ADDED: Confession script(Dm the bot !confess MESSAGE to send a confession without them knowing it was you!)
+UPDATED: GPT mindset to talk like a hippie!(!chat message) to talk to the bot!
 -
 -
 OLD: FEB/26th/2025
