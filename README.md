@@ -2,7 +2,12 @@ This is a normal discord bot with a built-in gpt model to help it chat with disc
 -
 Model used: cohere 
 -
-NEW: FEB/26th/2025
+NEW: MARCH/1st/2025
+-
+ADDED: Confession script(Dm the bot !confess MESSAGE to send a confession without them knowing it was you!)
+-
+-
+OLD: FEB/26th/2025
 -
 ADDED: !roles command (Allow server members to see roles (BESIDES: Admin/Owner/Bot roles) 
 -
