@@ -2,7 +2,12 @@ This is a normal discord bot with a built-in gpt model to help it chat with disc
 -
 Model used: cohere 
 -
-NEW: MARCH/1st/2025
+NEW: MARCH/6TH/2025
+-
+ADDED: New item to shop! change group name with 5K points!
+-
+-
+OLD: MARCH/1st/2025
 -
 ADDED: Confession script(Dm the bot !confess MESSAGE to send a confession without them knowing it was you!)
 -
