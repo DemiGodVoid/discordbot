@@ -47,6 +47,10 @@ def save_taken_points(taken_points):
 @bot.command()
 @commands.cooldown(1, 60, commands.BucketType.user)  # 1 use per 60 seconds per user
 async def roll(ctx, amount: int):
+    if amount <= 0:  # Prevent negative or zero bets
+        await ctx.send("Invalid amount! You must bet a positive number of points.")
+        return
+
     user_id = str(ctx.author.id)
     user_points = load_points()
 
@@ -70,7 +74,7 @@ async def roll(ctx, amount: int):
         user_points[user_id] = current_points - amount
         taken_points["total_taken_points"] += amount  # Add lost points to the total taken points
         await ctx.send(f"You gambled {amount} points and **lost**! You lost {amount} points. Total: {user_points[user_id]} points.")
-    
+
     # Save updated points and taken points
     save_points(user_points)
     save_taken_points(taken_points)
@@ -141,3 +145,4 @@ try:
     bot.run(token)
 except FileNotFoundError as e:
     print(e)
+                  
