@@ -24,6 +24,7 @@ async def shop(ctx):
     # Add the !create_role text to the embed
     embed.add_field(name="!create_role", value="Cost: 5k points!", inline=False)
     embed.add_field(name="!group_name", value="Cost: 5k points!", inline=False)
+    embed.add_field(name="!group_photo", value="Cost: 5k points!", inline=False)
     
     # Send the embed message to the channel
     await ctx.send(embed=embed)
