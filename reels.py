@@ -4,6 +4,7 @@ import random
 import asyncio
 import yt_dlp
 import os
+import time
 
 with open("token.txt", "r") as f:
     TOKEN = f.read().strip()
@@ -36,18 +37,30 @@ async def fetch_reels():
     headers = {"User-Agent": "Mozilla/5.0"}
 
     for url in REDDIT_URLS:
-        try:
-            response = requests.get(url, headers=headers).json()
-            posts = response["data"]["children"]
+        retries = 3
+        for _ in range(retries):
+            try:
+                response = requests.get(url, headers=headers)
+                if response.status_code == 429:
+                    print("Rate limited. Waiting 5 seconds before retrying...")
+                    time.sleep(5)  # Wait for 5 seconds if rate-limited
+                    continue
+                response.raise_for_status()
+                posts = response.json()["data"]["children"]
 
-            for post in posts:
-                if "url" in post["data"] and "v.redd.it" in post["data"]["url"]:
-                    video_url = post["data"]["url"]
-                    video_length = await get_video_length(video_url)
-                    if video_length and video_length <= 60:  # 1 minute = 60 seconds
-                        videos.append(video_url)
-        except Exception as e:
-            print(f"Error fetching from {url}: {e}")
+                for post in posts:
+                    if "url" in post["data"] and "v.redd.it" in post["data"]["url"]:
+                        video_url = post["data"]["url"]
+                        video_length = await get_video_length(video_url)
+                        if video_length and video_length <= 60:  # 1 minute = 60 seconds
+                            videos.append(video_url)
+                break  # Exit the retry loop after a successful request
+            except requests.exceptions.RequestException as e:
+                print(f"Error fetching from {url}: {e}")
+                time.sleep(2)  # Delay on error before retrying
+            except Exception as e:
+                print(f"Unexpected error: {e}")
+                break
 
     random.shuffle(videos)  # Shuffle to avoid repetition
     return videos
