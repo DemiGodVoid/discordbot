@@ -124,7 +124,7 @@ async def on_message(message):
         embed.add_field(name="!reels_on", value="Make me send reels every 60 minutes! Say !reels_off to turn me off.", inline=False)
         await message.channel.send(embed=embed)
 
-    if message.content == '!games':
+    if message.content == '!admin_commands':
         embed = discord.Embed(title="Bot Games", description="List of available games", color=discord.Color.green())
         embed.add_field(name="!connect4", value="Play Connect 4! Win points", inline=False)
         embed.add_field(name="!blackjack", value="Play blackjack and bet your points.", inline=False)
@@ -136,6 +136,10 @@ async def on_message(message):
         embed.add_field(name="!taken", value="Total spent points.", inline=False)
         await message.channel.send(embed=embed)
 
+    if message.content == '!games':
+        embed = discord.Embed(title="Admin Commands", description="List of Admin Commands", color=discord.Color.green())
+        embed.add_field(name="!delete_last", value="Deletes every message in the channel besides newly sent messages(incase of spam)", inline=False)
+    
     if message.content.startswith('!youtube '):
         query = message.content[len('!youtube '):].strip()
         video_url = search_youtube(query)
