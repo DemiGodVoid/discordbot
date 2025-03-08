@@ -68,6 +68,14 @@ async def download_video(url):
         print(f"Failed to download {url}: {e}")
         return None
 
+# Check the file size before sending
+async def check_file_size(file_path):
+    file_size = os.path.getsize(file_path)  # Get file size in bytes
+    max_size = 8 * 1024 * 1024  # 8 MB for non-Nitro users
+    if file_size > max_size:
+        return False
+    return True
+
 async def send_reels(channel):
     while reels_active:
         reels = await fetch_reels()
@@ -83,8 +91,12 @@ async def send_reels(channel):
             reel = random.choice(reels)
             video_path = await download_video(reel)
             if video_path:
-                await channel.send(random.choice(captions), file=discord.File(video_path))
-                os.remove(video_path)
+                # Check if the video file size is under the limit
+                if await check_file_size(video_path):
+                    await channel.send(random.choice(captions), file=discord.File(video_path))
+                    os.remove(video_path)
+                else:
+                    await channel.send("Video is too large to send. Skipping this one.")
             else:
                 await channel.send("Couldn't download this one 💀")
         await asyncio.sleep(60)
