@@ -18,9 +18,12 @@ async def on_ready():
 
 @bot.event
 async def on_message(message):
-    # Check if the bot is receiving messages and log it
+    # Log all received messages
     print(f"Received message: {message.content}")
-    await bot.process_commands(message)
+
+    # Allow the bot to process commands
+    if message.author != bot.user:
+        await bot.process_commands(message)
 
 @bot.command()
 async def delete_last(ctx):
