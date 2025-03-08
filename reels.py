@@ -41,12 +41,32 @@ async def fetch_reels():
 
             for post in posts:
                 if "url" in post["data"] and "v.redd.it" in post["data"]["url"]:
-                    videos.append(post["data"]["url"])
+                    video_url = post["data"]["url"]
+                    # Check if the video length is less than 1 minute
+                    video_length = await get_video_length(video_url)
+                    if video_length and video_length <= 60:
+                        videos.append(video_url)
         except Exception as e:
             print(f"Error fetching from {url}: {e}")
 
     random.shuffle(videos)
     return videos
+
+async def get_video_length(url):
+    """Get the length of the video in seconds (only for valid video URLs)"""
+    ydl_opts = {
+        'quiet': True,
+        'format': 'bv+ba/b',  # Best video + audio format
+    }
+
+    try:
+        with yt_dlp.YoutubeDL(ydl_opts) as ydl:
+            info_dict = ydl.extract_info(url, download=False)
+            duration = info_dict.get('duration', 0)
+            return duration
+    except Exception as e:
+        print(f"Error getting video length for {url}: {e}")
+        return None
 
 async def download_video(url):
     filename = f"{random.randint(1000, 9999)}.mp4"
