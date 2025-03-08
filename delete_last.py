@@ -9,7 +9,9 @@ def get_token():
 
 # Define the bot with a command prefix
 intents = discord.Intents.default()
-intents.messages = True
+intents.messages = True  # This allows the bot to read messages
+intents.message_content = True  # This allows the bot to access message content (required for commands)
+
 bot = commands.Bot(command_prefix="!", intents=intents)
 
 # Event when the bot is ready
