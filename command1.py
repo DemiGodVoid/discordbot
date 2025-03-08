@@ -139,7 +139,7 @@ async def on_message(message):
 
     if message.content == '!admin_coms':
         embed = discord.Embed(title="Admin Commands", description="List of Admin Commands", color=discord.Color.green())
-        embed.add_field(name="!delete_last", value="Deletes every message in the channel besides newly sent messages(incase of spam)", inline=False)
+        embed.add_field(name="!delete_last <NUMBER>", value="Deletes the amount of numbers for messages in the channel besides newly sent messages(incase of spam)", inline=False)
         await message.channel.send(embed=embed)
         
     if message.content.startswith('!youtube '):
