@@ -105,22 +105,23 @@ async def on_message(message):
             await message.channel.send("You do not have permission to set rules.")
 
     if message.content == '!commands':
-        embed = discord.Embed(title="Commands", description="List of available commands", color=discord.Color.blue())
+        embed = discord.Embed(title="Baisc Server Commands", description="List of available commands", color=discord.Color.blue())
         embed.add_field(name="!rules", value="View server Rules", inline=False)
         embed.add_field(name="!roles", value="Let users pick thier own roles.(Hides Admin roles/Owner roles and bot roles.)", inline=False)
         embed.add_field(name="!set_rules", value="Set server Rules (Admin only)", inline=False)
-        embed.add_field(name="!confess", value="DM me !confess MESSAGE to anonymously confess to a server!", inline=False)
         embed.add_field(name="!games", value="List available games", inline=False)
-        embed.add_field(name="!commands2", value="View more commands", inline=False)
+        embed.add_field(name="!funcommands", value="View Fun commands", inline=False)
         await message.channel.send(embed=embed)
 
-    if message.content == '!commands2':
-        embed = discord.Embed(title="More Commands", description="Additional fun and utility commands", color=discord.Color.blue())
+    if message.content == '!funcommands':
+        embed = discord.Embed(title="Fun Commands", description="Additional fun and utility commands", color=discord.Color.blue())
         embed.add_field(name="!youtube title - name", value="Search for a YouTube video.", inline=False)
         embed.add_field(name="!shop", value="View the bots shop!", inline=False)
         embed.add_field(name="!search prompt", value="Use the bots search engine! cost 500 points", inline=False)
         embed.add_field(name="!chat prompt", value="Chat with the bots gpt mindset! cost 500 points.", inline=False)
         embed.add_field(name="!image prompt", value="Make the bot generate an image! cost 1k points.", inline=False)
+        embed.add_field(name="!confess", value="DM me !confess MESSAGE to anonymously confess to a server!", inline=False)
+        
         await message.channel.send(embed=embed)
 
     if message.content == '!games':
