@@ -111,6 +111,7 @@ async def on_message(message):
         embed.add_field(name="!set_rules", value="Set server Rules (Admin only)", inline=False)
         embed.add_field(name="!games", value="List available games", inline=False)
         embed.add_field(name="!funcommands", value="View Fun commands", inline=False)
+        embed.add_field(name="!admin_coms", value="This will show you commands only admins can use.", inline=False)
         await message.channel.send(embed=embed)
 
     if message.content == '!funcommands':
