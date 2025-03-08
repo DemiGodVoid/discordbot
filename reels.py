@@ -95,11 +95,15 @@ async def send_reels(channel):
                 if await check_file_size(video_path):
                     await channel.send(random.choice(captions), file=discord.File(video_path))
                     os.remove(video_path)
+                    await asyncio.sleep(60)  # Wait 60 seconds after sending a video
                 else:
                     await channel.send("Video is too large to send. Skipping this one.")
+                    os.remove(video_path)  # Remove the large video to avoid unnecessary disk usage
             else:
                 await channel.send("Couldn't download this one 💀")
-        await asyncio.sleep(60)
+            # If video was too large, skip waiting 60 seconds and attempt next video immediately
+        else:
+            await asyncio.sleep(60)  # Wait 60 seconds if there are no available videos to send
 
 @client.event
 async def on_ready():
