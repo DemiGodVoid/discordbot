@@ -137,7 +137,7 @@ async def on_message(message):
         embed.add_field(name="!taken", value="Total spent points.", inline=False)
         await message.channel.send(embed=embed)
 
-    if message.content == '!games':
+    if message.content == '!admin_coms':
         embed = discord.Embed(title="Admin Commands", description="List of Admin Commands", color=discord.Color.green())
         embed.add_field(name="!delete_last", value="Deletes every message in the channel besides newly sent messages(incase of spam)", inline=False)
     
