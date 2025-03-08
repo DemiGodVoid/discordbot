@@ -23,11 +23,21 @@ async def delete_last(ctx, number: int):
     # Check if the user has admin permissions
     if ctx.author.guild_permissions.administrator:
         try:
-            # Fetch the last 'number' messages before the current message
-            deleted = await ctx.channel.purge(limit=number+1)  # Including the command message itself
+            # Inform about what is happening
+            await ctx.send(f"Attempting to delete the last {number} messages...", delete_after=5)
+
+            # Purge the last 'number' messages before the current message
+            # `+1` because it includes the command message itself
+            deleted = await ctx.channel.purge(limit=number+1)  
+
+            # Log number of deleted messages
             await ctx.send(f'Deleted {len(deleted)-1} messages.', delete_after=5)
+
         except Exception as e:
+            # Catch and print the error if something goes wrong
             await ctx.send(f"Error: {str(e)}")
+            print(f"Error while deleting messages: {str(e)}")
+
     else:
         # Inform the user if they do not have permission
         await ctx.send("You do not have permission to use this command.", delete_after=5)
