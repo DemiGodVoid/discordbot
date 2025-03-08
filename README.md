@@ -2,7 +2,13 @@ This is a normal discord bot with a built-in gpt model to help it chat with disc
 -
 Model used: cohere 
 -
-NEW: MARCH/6TH/2025
+NEW: March/7th/2025
+-
+ADDED: !reels_on/off command for the bot to send funny videos every 60 seconds!
+UPDATED: commands1.py to display basic server commands and other commands in certain spots for users to understand their usage better.
+-
+-
+OLD: MARCH/6TH/2025
 -
 ADDED: New item to shop! change group name with 5K points!
 -
