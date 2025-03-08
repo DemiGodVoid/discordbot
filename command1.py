@@ -121,7 +121,7 @@ async def on_message(message):
         embed.add_field(name="!chat prompt", value="Chat with the bots gpt mindset! cost 500 points.", inline=False)
         embed.add_field(name="!image prompt", value="Make the bot generate an image! cost 1k points.", inline=False)
         embed.add_field(name="!confess", value="DM me !confess MESSAGE to anonymously confess to a server!", inline=False)
-        
+        embed.add_field(name="!reels_on", value="Make me send reels every 60 minutes!", inline=False)
         await message.channel.send(embed=embed)
 
     if message.content == '!games':
