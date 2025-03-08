@@ -125,7 +125,7 @@ async def on_message(message):
         embed.add_field(name="!reels_on", value="Make me send reels every 60 minutes! Say !reels_off to turn me off.", inline=False)
         await message.channel.send(embed=embed)
 
-    if message.content == '!admin_commands':
+    if message.content == '!games':
         embed = discord.Embed(title="Bot Games", description="List of available games", color=discord.Color.green())
         embed.add_field(name="!connect4", value="Play Connect 4! Win points", inline=False)
         embed.add_field(name="!blackjack", value="Play blackjack and bet your points.", inline=False)
