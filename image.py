@@ -87,8 +87,8 @@ async def on_message(message):
                 image_file = discord.File(io.BytesIO(new_image), filename="generated_image.png")
                 await message.channel.send(file=image_file)
 
-                # Forget image after 10 seconds
-                await asyncio.sleep(10)
+                # Forget image 4 minutes
+                await asyncio.sleep(240)
                 if time.time() - last_generated_time[user_id] >= 10:
                     last_generated_image.pop(user_id, None)
                     last_generated_time.pop(user_id, None)
