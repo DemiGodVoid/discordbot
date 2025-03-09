@@ -2,6 +2,11 @@ This is a normal discord bot with a built-in gpt model to help it chat with disc
 -
 Model used: cohere 
 -
+NEW: March/9th/2025
+-
+UPDATED: Image generate AI script, now will allow you to modify the last generated image within 4 minutes. just say !image now <what_to_add>
+-
+-
 NEW: March/7th/2025
 -
 ADDED: !reels_on/off command for the bot to send funny videos every 60 seconds!
