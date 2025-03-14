@@ -157,7 +157,7 @@ class MyClient(discord.Client):
         history_text = "\n".join(self.chat_history[user_id]) + "\nBot:"
 
         # Modify the prompt to encourage rudeness
-        rude_prompt = f"{history_text}\nRespond as if you was high and smoking weed manner:\nBot:"
+        rude_prompt = f"{history_text}\nRespond with smart words and in a Respectful manner:\nBot:"
 
         try:
             response = co.generate(
