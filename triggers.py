@@ -21,10 +21,7 @@ def load_token():
         return f.read().strip()
 
 # Initialize bot
-intents = discord.Intents.default()
-intents.message_content = True  # Ensure this is explicitly set
-intents.guilds = True
-intents.members = True
+intents = discord.Intents.all()  # Enable all intents
 
 bot = commands.Bot(command_prefix="!", intents=intents)
 triggers = load_triggers()
