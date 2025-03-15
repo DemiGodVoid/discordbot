@@ -22,7 +22,7 @@ def load_token():
 
 # Initialize bot
 intents = discord.Intents.default()
-intents.messages = True
+intents.message_content = True  # Enable message content intent
 bot = commands.Bot(command_prefix="!", intents=intents)
 triggers = load_triggers()
 
