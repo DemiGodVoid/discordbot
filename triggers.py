@@ -20,10 +20,13 @@ def load_token():
     with open("token.txt", "r") as f:
         return f.read().strip()
 
-# Initialize bot
-intents = discord.Intents.all()  # Enable all intents
+intents = discord.Intents.default()
+intents.message_content = True  # Explicitly enable message content intent
+intents.guilds = True
+intents.members = True
 
 bot = commands.Bot(command_prefix="!", intents=intents)
+
 triggers = load_triggers()
 
 @bot.event
