@@ -22,7 +22,10 @@ def load_token():
 
 # Initialize bot
 intents = discord.Intents.default()
-intents.message_content = True  # Enable message content intent
+intents.message_content = True  # Ensure this is explicitly set
+intents.guilds = True
+intents.members = True
+
 bot = commands.Bot(command_prefix="!", intents=intents)
 triggers = load_triggers()
 
@@ -73,14 +76,14 @@ async def on_message(message):
     if message.author == bot.user:
         return
     
+    await bot.process_commands(message)  # Ensure commands are processed
+
     guild_id = str(message.guild.id)
     if guild_id in triggers:
         for trigger, response in triggers[guild_id].items():
-            if trigger in message.content:
+            if trigger.lower() in message.content.lower():  # Case-insensitive check
                 await message.channel.send(response)
                 break
-    
-    await bot.process_commands(message)
 
 # Run the bot
 TOKEN = load_token()
