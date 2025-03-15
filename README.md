@@ -2,12 +2,17 @@ This is a normal discord bot with a built-in gpt model to help it chat with disc
 -
 Model used: cohere 
 -
-NEW: March/9th/2025
+NEW: March/15th/2025
+-
+ADDED: Triggers, Bot will now set and respond to triggers!
+-
+-
+OLD: March/9th/2025
 -
 UPDATED: Image generate AI script, now will allow you to modify the last generated image within 4 minutes. just say !image now <what_to_add>
 -
 -
-NEW: March/7th/2025
+OLD: March/7th/2025
 -
 ADDED: !reels_on/off command for the bot to send funny videos every 60 seconds!
 UPDATED: commands1.py to display basic server commands and other commands in certain spots for users to understand their usage better.
