@@ -112,6 +112,7 @@ async def on_message(message):
         embed.add_field(name="!trigger", value="!trigger TRIGGER=RESPONSE.", inline=False)
         embed.add_field(name="!list", value="See trigger list.", inline=False)
         embed.add_field(name="!delete TRIGGER", value="Deletes a trigger.", inline=False)
+        embed.add_field(name="!web", value="View our webpage!.", inline=False)
         embed.add_field(name="!games", value="List available games", inline=False)
         embed.add_field(name="!funcommands", value="View Fun commands", inline=False)
         embed.add_field(name="!admin_coms", value="This will show you commands only admins can use.", inline=False)
