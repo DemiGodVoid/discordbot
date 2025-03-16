@@ -52,7 +52,7 @@ async def web(ctx):
 
         # If a valid last lhr.life URL is found, send it
         if last_lhr_url:
-            await ctx.send(f"Our Latest Generated URL: {last_lhr_url}")
+            await ctx.send(f"Get Access to much more! Vist our website and Check our page out! Our Latest Generated Link: {last_lhr_url}")
         else:
             # If no URLs passed the filter, notify the user
             await ctx.send("No URLs passed the filter.")
