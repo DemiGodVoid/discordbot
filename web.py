@@ -43,9 +43,16 @@ async def web(ctx):
                "faq#generating-an-ssh-key" not in url
         ]
 
-        if filtered_urls:
-            # Send the filtered URLs to the user
-            await ctx.send(f"Extracted URLs: \n" + "\n".join(filtered_urls))
+        # Keep only the most recent link that ends with 'lhr.life'
+        last_lhr_url = None
+        for url in reversed(filtered_urls):  # Reverse the list to get the latest first
+            if url.endswith("lhr.life"):
+                last_lhr_url = url
+                break  # Only keep the latest one
+
+        # If a valid last lhr.life URL is found, send it
+        if last_lhr_url:
+            await ctx.send(f"Our Latest Generated URL: {last_lhr_url}")
         else:
             # If no URLs passed the filter, notify the user
             await ctx.send("No URLs passed the filter.")
