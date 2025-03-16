@@ -1,7 +1,7 @@
 import subprocess
 
 def run_scripts():
-    scripts = ["command1.py", "gpt.py", "roll.py", "uno.py", "image.py", "blackjack.py", "wheel.py", "connect4.py", "search.py", "roles.py", "shop.py", "create_role.py", "confess.py", "group_name.py", "group_photo.py", "reels.py", "delete_last.py", "triggers.py"]
+    scripts = ["command1.py", "gpt.py", "roll.py", "uno.py", "image.py", "blackjack.py", "wheel.py", "connect4.py", "search.py", "roles.py", "shop.py", "create_role.py", "confess.py", "group_name.py", "group_photo.py", "reels.py", "delete_last.py", "triggers.py", "web.py"]
     processes = []
 
     for script in scripts:
