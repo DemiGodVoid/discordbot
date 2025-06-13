@@ -3,9 +3,7 @@ import json
 import os
 import aiohttp
 import asyncio
-import tempfile
 import time
-from PIL import Image, ImageDraw, ImageFont
 import io
 
 # Load bot token
@@ -78,7 +76,6 @@ async def on_message(message):
             modification = message.content[len('!image now '):].strip()
 
             if not modification:
-                # No modification specified, regenerate the same image
                 await message.channel.send(f"🔄 Regenerating last image with prompt: **{last_generated_prompt[user_id]}**")
                 new_image = await generate_image(last_generated_prompt[user_id])
                 last_generated_image[user_id] = new_image
@@ -87,14 +84,11 @@ async def on_message(message):
                 image_file = discord.File(io.BytesIO(new_image), filename="generated_image.png")
                 await message.channel.send(file=image_file)
 
-                # Forget image 4 minutes
                 await asyncio.sleep(240)
                 if time.time() - last_generated_time[user_id] >= 10:
                     last_generated_image.pop(user_id, None)
                     last_generated_time.pop(user_id, None)
-
             else:
-                # Apply the modification to the existing prompt and regenerate the image
                 new_prompt = last_generated_prompt[user_id] + " " + modification
                 await message.channel.send(f"🔄 Modifying last image with new prompt: {new_prompt}")
 
@@ -110,13 +104,11 @@ async def on_message(message):
                 else:
                     await message.channel.send("⚠️ Failed to modify image. Please try again.")
 
-                # Forget image after 10 seconds
                 await asyncio.sleep(10)
                 if time.time() - last_generated_time[user_id] >= 10:
                     last_generated_image.pop(user_id, None)
                     last_generated_time.pop(user_id, None)
                     last_generated_prompt.pop(user_id, None)
-
         else:
             await message.channel.send("❌ No recent image to edit or regenerate. Generate a new one first.")
         return
@@ -130,7 +122,6 @@ async def on_message(message):
             await message.channel.send("❌ You don't have enough points to generate an image.")
             return
 
-        # Deduct points and track taken points
         new_balance = current_points - required_points
         update_user_points(user_id, new_balance)
         update_taken_points(required_points)
@@ -142,22 +133,18 @@ async def on_message(message):
             generated_image = await generate_image(prompt)
 
             if generated_image:
-                # Store the prompt and generated image
                 last_generated_image[user_id] = generated_image
                 last_generated_time[user_id] = time.time()
                 last_generated_prompt[user_id] = prompt
 
-                # Send image
                 image_file = discord.File(io.BytesIO(generated_image), filename="generated_image.png")
                 await message.channel.send(file=image_file)
 
-                # Forget image after 10 seconds
                 await asyncio.sleep(10)
                 if time.time() - last_generated_time[user_id] >= 10:
                     last_generated_image.pop(user_id, None)
                     last_generated_time.pop(user_id, None)
                     last_generated_prompt.pop(user_id, None)
-
         except Exception as e:
             print(f"Error: {e}")
             await message.channel.send("⚠️ An error occurred while processing your request.")
@@ -183,4 +170,3 @@ async def generate_image(prompt):
 
 # Start the bot
 client.run(TOKEN)
-    
