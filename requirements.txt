@@ -1,0 +1,9 @@
+discord.py
+aiohttp
+google-api-python-client
+cohere
+Pillow
+spotipy
+yt-dlp
+requests
+beautifulsoup4
